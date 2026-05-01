@@ -1,0 +1,71 @@
+export interface ShapefileMetadata {
+  id: string;
+  name: string;
+  stateFips: string;
+  chamber: 'senate' | 'house' | 'congress' | 'custom';
+  year: number;
+  provenance: string;
+  uploadedBy: string;
+  comments: string;
+  tags: string[];
+  createdAt: string;
+  districtCount: number;
+  bounds: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
+  warnings: string[];
+}
+
+export interface ShapefileEntry {
+  metadata: ShapefileMetadata;
+  geojson: GeoJSON.FeatureCollection;
+}
+
+export interface CrosswalkRow {
+  unit_id: string;
+  total_pop: number;
+  vap: number;
+  black_vap: number;
+  hispanic_vap: number;
+  asian_vap: number;
+  dem_votes: number;
+  rep_votes: number;
+  lat: number;
+  lon: number;
+}
+
+export interface DistrictMetrics {
+  districtId: string;
+  totalPop: number;
+  vap: number;
+  blackVap: number;
+  hispanicVap: number;
+  asianVap: number;
+  minorityVapPct: number;
+  demVotes: number;
+  repVotes: number;
+  partisanLean: number; // Dem share 0–100
+}
+
+export interface DistrictDelta {
+  districtId: string;
+  a: DistrictMetrics;
+  b: DistrictMetrics;
+  deltaPop: number;
+  deltaVap: number;
+  deltaMinorityVapPct: number;
+  deltaPartisanLean: number;
+  minorityFlagged: boolean; // |deltaMinorityVapPct| > 5
+}
+
+export interface FairnessMetrics {
+  efficiencyGap: number;
+  meanMedian: number;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  districtCount: number;
+  bounds: [number, number, number, number];
+  geometryType: string;
+}

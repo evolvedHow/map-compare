@@ -1,0 +1,25 @@
+unit_id,total_pop,vap,black_vap,hispanic_vap,asian_vap,dem_votes,rep_votes,lat,lon
+# COLUMN REFERENCE:
+# unit_id       - unique identifier for the geographic unit (census block group, precinct, etc.)
+# total_pop     - total population in the unit
+# vap           - voting age population (18+)
+# black_vap     - Black/African-American voting age population
+# hispanic_vap  - Hispanic/Latino voting age population
+# asian_vap     - Asian voting age population
+# dem_votes     - Democratic votes in the chosen election (e.g. 2020 Presidential)
+# rep_votes     - Republican votes in the chosen election
+# lat           - latitude of the unit centroid (WGS84 / EPSG:4326)
+# lon           - longitude of the unit centroid (WGS84 / EPSG:4326)
+#
+# TIPS:
+# - All numeric fields accept decimals
+# - lat/lon must be in WGS84 decimal degrees (not projected coordinates)
+# - For Georgia precincts: lat ~ 30.5 to 35.0, lon ~ -85.5 to -80.9
+# - You can generate centroids from a precinct shapefile using QGIS or Python geopandas
+#
+# SAMPLE DATA (replace with real data):
+G13001-0001,4521,3412,1823,312,87,1642,1201,31.5765,-84.1234
+G13001-0002,3876,2934,987,421,143,1834,901,31.5821,-84.1198
+G13001-0003,5102,3891,2341,198,67,2198,1432,31.5698,-84.1312
+G13005-0001,2987,2201,543,876,234,1123,1034,31.7234,-84.0123
+G13005-0002,4123,3102,1234,654,321,1876,1089,31.7312,-84.0234
