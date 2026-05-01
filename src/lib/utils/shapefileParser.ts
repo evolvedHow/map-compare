@@ -6,7 +6,7 @@ export interface ParseResult {
   validation: ValidationResult;
 }
 
-export async function parseAndValidateShapefile(file: File): Promise<ParseResult> {
+export function validateGeoJSON(geojson: GeoJSON.FeatureCollection): ValidationResult {
   const validation: ValidationResult = {
     valid: false,
     errors: [],
@@ -16,29 +16,12 @@ export async function parseAndValidateShapefile(file: File): Promise<ParseResult
     geometryType: ''
   };
 
-  if (!file.name.toLowerCase().endsWith('.zip')) {
-    validation.errors.push('Please upload a .zip file containing .shp, .dbf, and .shx files.');
-    return { geojson: emptyFC(), validation };
-  }
-
-  let geojson: GeoJSON.FeatureCollection;
-  try {
-    const buffer = await file.arrayBuffer();
-    const result = await shp(buffer);
-    geojson = Array.isArray(result) ? result[0] : result;
-  } catch (err) {
-    validation.errors.push(
-      `Failed to parse shapefile: ${err instanceof Error ? err.message : String(err)}`
-    );
-    return { geojson: emptyFC(), validation };
-  }
-
   const features = geojson.features;
   validation.districtCount = features.length;
 
   if (features.length === 0) {
-    validation.errors.push('Shapefile contains no features.');
-    return { geojson, validation };
+    validation.errors.push('GeoJSON contains no features.');
+    return validation;
   }
 
   const nullCount = features.filter(f => !f.geometry).length;
@@ -58,7 +41,6 @@ export async function parseAndValidateShapefile(file: File): Promise<ParseResult
   }
   validation.geometryType = [...geomTypes].join(', ') || 'unknown';
 
-  // Bounding box
   try {
     const lons: number[] = [];
     const lats: number[] = [];
@@ -73,12 +55,10 @@ export async function parseAndValidateShapefile(file: File): Promise<ParseResult
         Math.max(...lons),
         Math.max(...lats)
       ];
-
-      // CRS sanity: WGS84 lon/lat should be in [-180,180] / [-90,90]
       if (Math.max(...lons) > 180 || Math.min(...lons) < -180) {
         validation.warnings.push(
           'Coordinates appear to be in a projected CRS (not WGS84 / EPSG:4326). ' +
-          'Maps may not render correctly. Re-project to EPSG:4326 before uploading.'
+          'Maps may not render correctly.'
         );
       }
     }
@@ -87,7 +67,37 @@ export async function parseAndValidateShapefile(file: File): Promise<ParseResult
   }
 
   validation.valid = validation.errors.length === 0;
-  return { geojson, validation };
+  return validation;
+}
+
+export async function parseAndValidateShapefile(file: File): Promise<ParseResult> {
+  const earlyValidation: ValidationResult = {
+    valid: false,
+    errors: [],
+    warnings: [],
+    districtCount: 0,
+    bounds: [0, 0, 0, 0],
+    geometryType: ''
+  };
+
+  if (!file.name.toLowerCase().endsWith('.zip')) {
+    earlyValidation.errors.push('Please upload a .zip file containing .shp, .dbf, and .shx files.');
+    return { geojson: emptyFC(), validation: earlyValidation };
+  }
+
+  let geojson: GeoJSON.FeatureCollection;
+  try {
+    const buffer = await file.arrayBuffer();
+    const result = await shp(buffer);
+    geojson = Array.isArray(result) ? result[0] : result;
+  } catch (err) {
+    earlyValidation.errors.push(
+      `Failed to parse shapefile: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return { geojson: emptyFC(), validation: earlyValidation };
+  }
+
+  return { geojson, validation: validateGeoJSON(geojson) };
 }
 
 function extractCoords(

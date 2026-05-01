@@ -1,9 +1,19 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { shapefiles, stateFips } from '../stores/shapefileStore';
-  import { parseAndValidateShapefile } from '../utils/shapefileParser';
+  import { parseAndValidateShapefile, validateGeoJSON } from '../utils/shapefileParser';
   import { exportRepo, importRepo } from '../utils/exportImport';
   import ShapefileCard from './ShapefileCard.svelte';
   import type { ShapefileEntry, ValidationResult } from '../types';
+
+  interface CatalogEntry {
+    filename: string;
+    name: string;
+    chamber: 'senate' | 'house' | 'congress' | 'custom';
+    year: number;
+    provenance: string;
+    tags: string[];
+  }
 
   // Upload state
   let dragging = $state(false);
@@ -29,16 +39,16 @@
   let filterChamber = $state('all');
   let filterState = $state('');
 
+  // Pre-loaded plans
+  let catalog = $state<CatalogEntry[]>([]);
+  let showPresets = $state(true);
+  let presetChamberFilter = $state('all');
+  let loadingPreset = $state<string | null>(null);
+  let presetError = $state<string | null>(null);
+  let addingAll = $state(false);
+
   stateFips.subscribe(v => (metaStateFips = v));
 
-  let entries = $derived([] as ShapefileEntry[]);
-  $effect(() => {
-    shapefiles.subscribe(v => {
-      // reactive re-assignment handled by store subscribe
-    });
-  });
-
-  // Filtered entries derived from store
   let allEntries: ShapefileEntry[] = $state([]);
   shapefiles.subscribe(v => (allEntries = v));
 
@@ -55,6 +65,81 @@
       return matchText && matchChamber && matchState;
     })
   );
+
+  let filteredCatalog = $derived(
+    catalog.filter(item =>
+      presetChamberFilter === 'all' || item.chamber === presetChamberFilter
+    )
+  );
+
+  onMount(async () => {
+    try {
+      const resp = await fetch(`${import.meta.env.BASE_URL}data-catalog.json`);
+      catalog = await resp.json();
+    } catch (e) {
+      console.error('Failed to load data catalog', e);
+    }
+  });
+
+  function isAlreadyAdded(filename: string): boolean {
+    return allEntries.some(e => e.metadata.tags.includes(`preset:${filename}`));
+  }
+
+  async function addPreset(item: CatalogEntry): Promise<boolean> {
+    if (isAlreadyAdded(item.filename)) return true;
+    try {
+      const resp = await fetch(`${import.meta.env.BASE_URL}data/${item.filename}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const geojson = await resp.json() as GeoJSON.FeatureCollection;
+      const v = validateGeoJSON(geojson);
+      if (!v.valid) {
+        presetError = `${item.name}: ${v.errors.join(', ')}`;
+        return false;
+      }
+      const entry: ShapefileEntry = {
+        metadata: {
+          id: crypto.randomUUID(),
+          name: item.name,
+          stateFips: '13',
+          chamber: item.chamber,
+          year: item.year,
+          provenance: item.provenance,
+          uploadedBy: 'pre-loaded',
+          comments: '',
+          tags: [...item.tags, `preset:${item.filename}`],
+          createdAt: new Date().toISOString(),
+          districtCount: v.districtCount,
+          bounds: v.bounds,
+          warnings: v.warnings
+        },
+        geojson
+      };
+      await shapefiles.add(entry);
+      return true;
+    } catch (e) {
+      presetError = `Failed to load ${item.name}: ${e instanceof Error ? e.message : String(e)}`;
+      return false;
+    }
+  }
+
+  async function handleAddPreset(item: CatalogEntry) {
+    loadingPreset = item.filename;
+    presetError = null;
+    await addPreset(item);
+    loadingPreset = null;
+  }
+
+  async function handleAddAll() {
+    addingAll = true;
+    presetError = null;
+    const toAdd = filteredCatalog.filter(item => !isAlreadyAdded(item.filename));
+    for (const item of toAdd) {
+      loadingPreset = item.filename;
+      await addPreset(item);
+    }
+    loadingPreset = null;
+    addingAll = false;
+  }
 
   // Drag and drop
   function onDragOver(e: DragEvent) {
@@ -154,6 +239,20 @@
     }
     (e.target as HTMLInputElement).value = '';
   }
+
+  const chamberLabel: Record<string, string> = {
+    congress: 'US Congress',
+    senate: 'State Senate',
+    house: 'State House',
+    custom: 'Custom / Geography'
+  };
+
+  const chamberBadge: Record<string, string> = {
+    congress: 'bg-purple-100 text-purple-700',
+    senate: 'bg-blue-100 text-blue-700',
+    house: 'bg-green-100 text-green-700',
+    custom: 'bg-gray-100 text-gray-600'
+  };
 </script>
 
 <div class="space-y-8">
@@ -173,6 +272,88 @@
       </label>
     </div>
   </div>
+
+  <!-- Pre-loaded Plans -->
+  {#if catalog.length > 0}
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden">
+      <!-- Section header -->
+      <div class="flex items-center justify-between px-5 py-3 bg-blue-100 border-b border-blue-200">
+        <button
+          class="flex items-center gap-2 font-semibold text-blue-900 text-sm"
+          onclick={() => (showPresets = !showPresets)}
+        >
+          <span class="text-base">{showPresets ? '▾' : '▸'}</span>
+          Pre-loaded Georgia Plans
+          <span class="text-xs font-normal text-blue-600">({catalog.length} available)</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <select
+            bind:value={presetChamberFilter}
+            class="border border-blue-300 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All chambers</option>
+            <option value="congress">Congress</option>
+            <option value="senate">Senate</option>
+            <option value="house">House</option>
+            <option value="custom">Geography</option>
+          </select>
+          <button
+            onclick={handleAddAll}
+            disabled={addingAll || filteredCatalog.every(i => isAlreadyAdded(i.filename))}
+            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {addingAll ? 'Adding…' : 'Add All'}
+          </button>
+        </div>
+      </div>
+
+      {#if showPresets}
+        <div class="p-4 space-y-2">
+          {#if presetError}
+            <div class="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+              ✗ {presetError}
+            </div>
+          {/if}
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {#each filteredCatalog as item (item.filename)}
+              {@const added = isAlreadyAdded(item.filename)}
+              {@const loading = loadingPreset === item.filename}
+              <div
+                class="flex items-start justify-between gap-2 bg-white rounded-xl border px-3 py-2.5
+                  {added ? 'border-green-200 opacity-60' : 'border-blue-200 hover:border-blue-400'} transition-colors"
+              >
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-gray-800 leading-tight truncate">{item.name}</p>
+                  <div class="flex flex-wrap gap-1 mt-1">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium {chamberBadge[item.chamber]}">
+                      {chamberLabel[item.chamber]}
+                    </span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{item.year}</span>
+                    {#each item.tags.slice(0, 2) as tag}
+                      <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{tag}</span>
+                    {/each}
+                  </div>
+                </div>
+                <button
+                  onclick={() => handleAddPreset(item)}
+                  disabled={added || loading || addingAll}
+                  class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors
+                    {added
+                      ? 'bg-green-100 text-green-700 cursor-default'
+                      : loading
+                        ? 'bg-gray-100 text-gray-400 cursor-wait'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40'}"
+                >
+                  {added ? '✓' : loading ? '…' : 'Add'}
+                </button>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   <!-- Upload zone -->
   <div
@@ -374,7 +555,7 @@
     {/if}
   {:else if !validation}
     <p class="text-gray-400 text-center py-12">
-      No shapefiles in the repo yet. Upload your first one above.
+      No shapefiles in the repo yet. Use the pre-loaded plans above or upload your own.
     </p>
   {/if}
 </div>

@@ -1,0 +1,290 @@
+[
+  {
+    "filename": "congress12_census20.geojson",
+    "name": "GA Congress — 2012 Plan (2020 Census data)",
+    "chamber": "congress",
+    "year": 2012,
+    "provenance": "Georgia General Assembly",
+    "tags": ["2020-census"]
+  },
+  {
+    "filename": "congress21_census20.geojson",
+    "name": "GA Congress — 2021 Plan (2020 Census data)",
+    "chamber": "congress",
+    "year": 2021,
+    "provenance": "Georgia General Assembly",
+    "tags": ["2020-census"]
+  },
+  {
+    "filename": "congress21_p2.geojson",
+    "name": "GA Congress — 2021 Plan v2",
+    "chamber": "congress",
+    "year": 2021,
+    "provenance": "Georgia General Assembly",
+    "tags": []
+  },
+  {
+    "filename": "congress_cooper.geojson",
+    "name": "GA Congress — Cooper Remedial Plan",
+    "chamber": "congress",
+    "year": 2023,
+    "provenance": "Special Master Cooper (court remedy)",
+    "tags": ["remedy", "cooper"]
+  },
+  {
+    "filename": "congress_enacted_2123_2024update.geojson",
+    "name": "GA Congress — Enacted 2021-23 (2024 update)",
+    "chamber": "congress",
+    "year": 2023,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "congress_enacted_24_2024update.geojson",
+    "name": "GA Congress — Enacted 2024 (2024 update)",
+    "chamber": "congress",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "congress_proposed3.geojson",
+    "name": "GA Congress — Proposed Plan 3",
+    "chamber": "congress",
+    "year": 2021,
+    "provenance": "Georgia General Assembly",
+    "tags": ["proposed"]
+  },
+  {
+    "filename": "congress_remedy_1.geojson",
+    "name": "GA Congress — Remedy Plan 1",
+    "chamber": "congress",
+    "year": 2023,
+    "provenance": "Georgia redistricting remedy (Allen v. Milligan)",
+    "tags": ["remedy"]
+  },
+  {
+    "filename": "congress_remedy_1_2024update.geojson",
+    "name": "GA Congress — Remedy Plan 1 (2024 update)",
+    "chamber": "congress",
+    "year": 2024,
+    "provenance": "Georgia redistricting remedy (Allen v. Milligan)",
+    "tags": ["remedy", "2024-update"]
+  },
+  {
+    "filename": "congress_remedy_2.geojson",
+    "name": "GA Congress — Remedy Plan 2",
+    "chamber": "congress",
+    "year": 2023,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy"]
+  },
+  {
+    "filename": "enacted_congress22.geojson",
+    "name": "GA Congress — Enacted 2022",
+    "chamber": "congress",
+    "year": 2022,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted"]
+  },
+  {
+    "filename": "enacted_house22.geojson",
+    "name": "GA House — Enacted 2022",
+    "chamber": "house",
+    "year": 2022,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted"]
+  },
+  {
+    "filename": "enacted_house22_2024update.geojson",
+    "name": "GA House — Enacted 2022 (2024 update)",
+    "chamber": "house",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "enacted_senate22.geojson",
+    "name": "GA Senate — Enacted 2022",
+    "chamber": "senate",
+    "year": 2022,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted"]
+  },
+  {
+    "filename": "enacted_senate22_2024update.geojson",
+    "name": "GA Senate — Enacted 2022 (2024 update)",
+    "chamber": "senate",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "house15_census20.geojson",
+    "name": "GA House — 2015 Plan (2020 Census data)",
+    "chamber": "house",
+    "year": 2015,
+    "provenance": "Georgia General Assembly",
+    "tags": ["2020-census"]
+  },
+  {
+    "filename": "house_enacted_2123_2024update.geojson",
+    "name": "GA House — Enacted 2021-23 (2024 update)",
+    "chamber": "house",
+    "year": 2023,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "house_enacted_24_2024update.geojson",
+    "name": "GA House — Enacted 2024 (2024 update)",
+    "chamber": "house",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "house_prop1_dem.geojson",
+    "name": "GA House — Proposed Plan 1 (Democratic)",
+    "chamber": "house",
+    "year": 2021,
+    "provenance": "Georgia Democratic caucus",
+    "tags": ["proposed", "democratic"]
+  },
+  {
+    "filename": "house_prop2_rep.geojson",
+    "name": "GA House — Proposed Plan 2 (Republican)",
+    "chamber": "house",
+    "year": 2021,
+    "provenance": "Georgia Republican caucus",
+    "tags": ["proposed", "republican"]
+  },
+  {
+    "filename": "house_prop3_rep.geojson",
+    "name": "GA House — Proposed Plan 3 (Republican)",
+    "chamber": "house",
+    "year": 2021,
+    "provenance": "Georgia Republican caucus",
+    "tags": ["proposed", "republican"]
+  },
+  {
+    "filename": "house_remedy_1.geojson",
+    "name": "GA House — Remedy Plan 1",
+    "chamber": "house",
+    "year": 2023,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy"]
+  },
+  {
+    "filename": "house_remedy_1_2024update.geojson",
+    "name": "GA House — Remedy Plan 1 (2024 update)",
+    "chamber": "house",
+    "year": 2024,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy", "2024-update"]
+  },
+  {
+    "filename": "house_remedy_2.geojson",
+    "name": "GA House — Remedy Plan 2",
+    "chamber": "house",
+    "year": 2023,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy"]
+  },
+  {
+    "filename": "senate14_census20.geojson",
+    "name": "GA Senate — 2014 Plan (2020 Census data)",
+    "chamber": "senate",
+    "year": 2014,
+    "provenance": "Georgia General Assembly",
+    "tags": ["2020-census"]
+  },
+  {
+    "filename": "senate_enacted_2123_2024update.geojson",
+    "name": "GA Senate — Enacted 2021-23 (2024 update)",
+    "chamber": "senate",
+    "year": 2023,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "senate_enacted_24_2024update.geojson",
+    "name": "GA Senate — Enacted 2024 (2024 update)",
+    "chamber": "senate",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"]
+  },
+  {
+    "filename": "senate_prop1_dem.geojson",
+    "name": "GA Senate — Proposed Plan 1 (Democratic)",
+    "chamber": "senate",
+    "year": 2021,
+    "provenance": "Georgia Democratic caucus",
+    "tags": ["proposed", "democratic"]
+  },
+  {
+    "filename": "senate_prop2_rep.geojson",
+    "name": "GA Senate — Proposed Plan 2 (Republican)",
+    "chamber": "senate",
+    "year": 2021,
+    "provenance": "Georgia Republican caucus",
+    "tags": ["proposed", "republican"]
+  },
+  {
+    "filename": "senate_prop3_rep.geojson",
+    "name": "GA Senate — Proposed Plan 3 (Republican)",
+    "chamber": "senate",
+    "year": 2021,
+    "provenance": "Georgia Republican caucus",
+    "tags": ["proposed", "republican"]
+  },
+  {
+    "filename": "senate_remedy.geojson",
+    "name": "GA Senate — Remedy Plan",
+    "chamber": "senate",
+    "year": 2023,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy"]
+  },
+  {
+    "filename": "senate_remedy_2.geojson",
+    "name": "GA Senate — Remedy Plan 2",
+    "chamber": "senate",
+    "year": 2023,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy"]
+  },
+  {
+    "filename": "senate_remedy_40pct.geojson",
+    "name": "GA Senate — Remedy 40% Plan",
+    "chamber": "senate",
+    "year": 2023,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy", "40pct"]
+  },
+  {
+    "filename": "senate_remedy_40pct_2024update.geojson",
+    "name": "GA Senate — Remedy 40% Plan (2024 update)",
+    "chamber": "senate",
+    "year": 2024,
+    "provenance": "Georgia redistricting remedy",
+    "tags": ["remedy", "40pct", "2024-update"]
+  },
+  {
+    "filename": "county.geojson",
+    "name": "GA County Boundaries",
+    "chamber": "custom",
+    "year": 2020,
+    "provenance": "U.S. Census Bureau",
+    "tags": ["geography", "counties"]
+  },
+  {
+    "filename": "places_2020data.geojson",
+    "name": "GA Places — 2020 Census Data",
+    "chamber": "custom",
+    "year": 2020,
+    "provenance": "U.S. Census Bureau, 2020",
+    "tags": ["geography", "places"]
+  }
+]
