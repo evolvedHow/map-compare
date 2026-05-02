@@ -60,18 +60,79 @@ export function spatialJoin(
   return result;
 }
 
+/**
+ * Build deltas using centroid-based spatial matching.
+ *
+ * Phase 1: match same-numbered districts whose centroids are within 20 km
+ *          (handles the common case where numbering is stable).
+ * Phase 2: greedily match remaining A districts to the nearest unmatched B
+ *          district (handles plans where some districts were renumbered).
+ *
+ * This avoids the nonsensical deltas produced by the naive ID-match approach
+ * when a redistricting cycle renumbers even a handful of districts.
+ */
 export function buildDeltas(
+  fcA: GeoJSON.FeatureCollection,
   metricsA: Map<string, DistrictMetrics>,
+  fcB: GeoJSON.FeatureCollection,
   metricsB: Map<string, DistrictMetrics>
-) {
-  // Union of all district IDs
-  const allIds = new Set([...metricsA.keys(), ...metricsB.keys()]);
-  return [...allIds].map(id => {
-    const a = metricsA.get(id) ?? zeroMetrics(id);
-    const b = metricsB.get(id) ?? zeroMetrics(id);
+): DistrictDelta[] {
+  // Build centroid lists
+  const cA: { id: string; lng: number; lat: number }[] = fcA.features.map((f, i) => {
+    const c = turf.centroid(f).geometry.coordinates;
+    return { id: districtId(f, i), lng: c[0], lat: c[1] };
+  });
+  const cB: { id: string; lng: number; lat: number }[] = fcB.features.map((f, i) => {
+    const c = turf.centroid(f).geometry.coordinates;
+    return { id: districtId(f, i), lng: c[0], lat: c[1] };
+  });
+
+  // Fast Euclidean squared-distance in degree space (good enough for matching)
+  function distSq(a: { lng: number; lat: number }, b: { lng: number; lat: number }) {
+    const dlng = (a.lng - b.lng) * Math.cos((a.lat + b.lat) * Math.PI / 360);
+    const dlat = a.lat - b.lat;
+    return dlng * dlng + dlat * dlat; // degrees²; 1° ≈ 111 km → 0.18° ≈ 20 km
+  }
+  const MATCH_THRESHOLD_SQ = (20 / 111) * (20 / 111); // 20 km in degree²
+
+  const matchedB = new Set<string>();
+  const pairs: [string, string][] = [];
+
+  // Phase 1: same-number matches within threshold
+  const cBById = new Map(cB.map(c => [c.id, c]));
+  for (const a of cA) {
+    const b = cBById.get(a.id);
+    if (b && distSq(a, b) < MATCH_THRESHOLD_SQ) {
+      pairs.push([a.id, b.id]);
+      matchedB.add(b.id);
+    }
+  }
+  const matchedA = new Set(pairs.map(([id]) => id));
+
+  // Phase 2: greedy nearest-neighbour for remaining A districts
+  const unclaimedB = cB.filter(c => !matchedB.has(c.id));
+  for (const a of cA) {
+    if (matchedA.has(a.id)) continue;
+    if (unclaimedB.length === 0) break;
+    let bestIdx = 0;
+    let bestDist = distSq(a, unclaimedB[0]);
+    for (let j = 1; j < unclaimedB.length; j++) {
+      const d = distSq(a, unclaimedB[j]);
+      if (d < bestDist) { bestDist = d; bestIdx = j; }
+    }
+    const chosen = unclaimedB[bestIdx];
+    pairs.push([a.id, chosen.id]);
+    unclaimedB.splice(bestIdx, 1);
+  }
+
+  return pairs.map(([idA, idB]) => {
+    const a = metricsA.get(idA) ?? zeroMetrics(idA);
+    const b = metricsB.get(idB) ?? zeroMetrics(idA);
     const deltaMinorityVapPct = b.minorityVapPct - a.minorityVapPct;
     return {
-      districtId: id,
+      districtId: idA,
+      matchedBId: idB,
+      isRenumbered: idA !== idB,
       a,
       b,
       deltaPop: b.totalPop - a.totalPop,

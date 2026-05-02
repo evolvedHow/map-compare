@@ -86,22 +86,35 @@
 
   async function selectPlan(entry: CatalogEntry) {
     if (loadingFile) return;
-    loadError = null;
-    reportMode = false;
-    compactnessA = null;
-    compactnessB = null;
-    countySplitsA = null;
-    countySplitsB = null;
 
+    // Deselect if already selected
     if (planA?.entry.filename === entry.filename) {
       planA = planB;
       planB = null;
+      loadError = null;
+      reportMode = false;
+      compactnessA = null; compactnessB = null;
+      countySplitsA = null; countySplitsB = null;
       return;
     }
     if (planB?.entry.filename === entry.filename) {
       planB = null;
+      loadError = null;
+      reportMode = false;
+      compactnessB = null; countySplitsB = null;
       return;
     }
+
+    // Chamber restriction: Plan B must match Plan A's chamber
+    if (planA && entry.chamber !== planA.entry.chamber) {
+      loadError = `Chamber mismatch: cannot compare a ${chamberLabels[planA.entry.chamber]} plan with a ${chamberLabels[entry.chamber]} plan. Select another ${chamberLabels[planA.entry.chamber]} plan, or deselect Plan A first.`;
+      return;
+    }
+
+    loadError = null;
+    reportMode = false;
+    compactnessA = null; compactnessB = null;
+    countySplitsA = null; countySplitsB = null;
 
     loadingFile = entry.filename;
     try {
@@ -143,12 +156,12 @@
     custom: catalog.filter(e => e.chamber === 'custom'),
   });
 
-  const chamberMismatch = $derived(
-    !!planA && !!planB && planA.entry.chamber !== planB.entry.chamber
-  );
+
 
   const deltas = $derived(
-    planA && planB ? buildDeltas(planA.metrics, planB.metrics) : []
+    planA && planB
+      ? buildDeltas(planA.geojson, planA.metrics, planB.geojson, planB.metrics)
+      : []
   );
 
   const fairnessA = $derived(planA ? computeFairness([...planA.metrics.values()]) : null);
@@ -215,11 +228,13 @@
               {@const isA = planA?.entry.filename === entry.filename}
               {@const isB = planB?.entry.filename === entry.filename}
               {@const isLoading = loadingFile === entry.filename}
+              {@const isLocked = !!planA && !isA && !isB && entry.chamber !== planA.entry.chamber}
               <button
                 class="w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors
-                  {isA ? 'bg-blue-50 border-l-2 border-blue-500' : isB ? 'bg-amber-50 border-l-2 border-amber-400' : 'border-l-2 border-transparent hover:bg-gray-50 hover:border-gray-200'}"
+                  {isA ? 'bg-blue-50 border-l-2 border-blue-500' : isB ? 'bg-amber-50 border-l-2 border-amber-400' : isLocked ? 'border-l-2 border-transparent opacity-35 cursor-not-allowed' : 'border-l-2 border-transparent hover:bg-gray-50 hover:border-gray-200'}"
                 onclick={() => selectPlan(entry)}
-                disabled={!!loadingFile && !isLoading}
+                disabled={(!!loadingFile && !isLoading) || isLocked}
+                title={isLocked ? `Only ${chamberLabels[planA!.entry.chamber]} plans can be compared` : undefined}
               >
                 <span class="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
                   {isA ? 'bg-blue-600 text-white' : isB ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-400'}">
@@ -308,18 +323,6 @@
       {/if}
     </div>
 
-    <!-- Chamber mismatch warning -->
-    {#if chamberMismatch}
-      <div class="mx-6 mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3 text-sm text-amber-800">
-        <span class="text-amber-500 text-base shrink-0">⚠</span>
-        <span>
-          <strong>Chamber mismatch:</strong> Comparing a
-          <strong class="capitalize">{planA?.entry.chamber}</strong> plan against a
-          <strong class="capitalize">{planB?.entry.chamber}</strong> plan.
-          Metrics are computed but district-level matching by number may not be meaningful.
-        </span>
-      </div>
-    {/if}
 
     <!-- Empty state -->
     {#if !planA && !planB}

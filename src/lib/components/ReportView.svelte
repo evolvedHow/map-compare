@@ -80,38 +80,26 @@
     if (sortKey === key) sortDir = sortDir === 1 ? -1 : 1;
     else { sortKey = key; sortDir = 1; }
   }
-
   function sortIcon(key: string) {
     return sortKey === key ? (sortDir === 1 ? ' ↑' : ' ↓') : '';
   }
 
   function sortDeltas(ds: DistrictDelta[], key: string, dir: 1 | -1): DistrictDelta[] {
-    return [...ds].sort((a, b) => {
-      const bvapPct = (m: DistrictMetrics) => m.vap > 0 ? (m.blackVap / m.vap) * 100 : 0;
+    const bvapPct = (m: DistrictMetrics) => m.vap > 0 ? (m.blackVap / m.vap) * 100 : 0;
+    return [...ds].sort((x, y) => {
       let va: number | string = 0, vb: number | string = 0;
       switch (key) {
-        case 'id':     va = a.districtId;           vb = b.districtId;           break;
-        case 'pop_a':  va = a.a.totalPop;           vb = b.a.totalPop;           break;
-        case 'pop_b':  va = a.b.totalPop;           vb = b.b.totalPop;           break;
-        case 'dpop':   va = a.deltaPop;             vb = b.deltaPop;             break;
-        case 'bvap_a': va = bvapPct(a.a);          vb = bvapPct(b.a);           break;
-        case 'bvap_b': va = bvapPct(a.b);          vb = bvapPct(b.b);           break;
-        case 'dbvap':  va = bvapPct(a.b)-bvapPct(a.a); vb = bvapPct(b.b)-bvapPct(b.a); break;
-        case 'min_a':  va = a.a.minorityVapPct;    vb = b.a.minorityVapPct;     break;
-        case 'min_b':  va = a.b.minorityVapPct;    vb = b.b.minorityVapPct;     break;
-        case 'dmin':   va = a.deltaMinorityVapPct; vb = b.deltaMinorityVapPct;  break;
-        case 'lean_a': va = a.a.partisanLean;       vb = b.a.partisanLean;       break;
-        case 'lean_b': va = a.b.partisanLean;       vb = b.b.partisanLean;       break;
-        case 'dlean':  va = a.deltaPartisanLean;   vb = b.deltaPartisanLean;    break;
-        case 'pp_a': {
-          const ca = compactnessA.get(a.districtId)?.polsbyPopper ?? 0;
-          const cb = compactnessA.get(b.districtId)?.polsbyPopper ?? 0;
-          va = ca; vb = cb; break;
-        }
+        case 'id':     va = x.districtId;         vb = y.districtId;         break;
+        case 'pop_b':  va = x.b.totalPop;         vb = y.b.totalPop;         break;
+        case 'lean_a': va = x.a.partisanLean;     vb = y.a.partisanLean;     break;
+        case 'lean_b': va = x.b.partisanLean;     vb = y.b.partisanLean;     break;
+        case 'dlean':  va = x.deltaPartisanLean;  vb = y.deltaPartisanLean;  break;
+        case 'bvap_a': va = bvapPct(x.a);         vb = bvapPct(y.a);         break;
+        case 'bvap_b': va = bvapPct(x.b);         vb = bvapPct(y.b);         break;
+        case 'dbvap':  va = bvapPct(x.b)-bvapPct(x.a); vb = bvapPct(y.b)-bvapPct(y.a); break;
         case 'pp_b': {
-          const ca = compactnessB.get(a.districtId)?.polsbyPopper ?? 0;
-          const cb = compactnessB.get(b.districtId)?.polsbyPopper ?? 0;
-          va = ca; vb = cb; break;
+          va = compactnessB.get(x.matchedBId)?.polsbyPopper ?? 0;
+          vb = compactnessB.get(y.matchedBId)?.polsbyPopper ?? 0; break;
         }
       }
       if (typeof va === 'string') {
@@ -124,27 +112,43 @@
   }
 
   const sortedDeltas = $derived(sortDeltas(deltas, sortKey, sortDir));
+  const halfN = $derived(Math.ceil(sortedDeltas.length / 2));
+  const leftDeltas  = $derived(sortedDeltas.slice(0, halfN));
+  const rightDeltas = $derived(sortedDeltas.slice(halfN));
 
   // ── Format helpers ───────────────────────────────────────────────────────
 
   function fmtN(n: number) { return Math.round(n).toLocaleString(); }
   function fmtPct(n: number) { return n.toFixed(1) + '%'; }
-  function fmtDelta(n: number, pct = false, threshold = 0.05) {
-    if (Math.abs(n) < threshold) return '—';
-    const s = pct ? fmtPct(Math.abs(n)) : fmtN(Math.abs(n));
-    return n > 0 ? `+${s}` : `−${s}`;
-  }
-  function dClass(n: number, threshold = 0.05) {
-    if (Math.abs(n) < threshold) return 'text-gray-300';
-    return n > 0 ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium';
-  }
   function fmtEG(n: number) {
-    const p = n > 0 ? 'D' : 'R';
-    return `${p}+${(Math.abs(n) * 100).toFixed(1)}%`;
+    return `${n > 0 ? 'D' : 'R'}+${(Math.abs(n) * 100).toFixed(1)}%`;
   }
   function fmtBias(n: number) {
     if (Math.abs(n) < 0.5) return 'Neutral';
     return (n > 0 ? 'Dem' : 'Rep') + ` +${Math.abs(n).toFixed(1)}pp`;
+  }
+  function fmtLean(lean: number) {
+    const d = lean - 50;
+    if (Math.abs(d) < 0.5) return 'EVEN';
+    return d > 0 ? `D+${d.toFixed(1)}%` : `R+${Math.abs(d).toFixed(1)}%`;
+  }
+  function leanClass(lean: number) {
+    const d = lean - 50;
+    if (Math.abs(d) < 1) return 'text-gray-500';
+    return d > 0 ? 'text-blue-700' : 'text-red-600';
+  }
+  // Color for Plan B value based on directional change from Plan A
+  function bValClass(delta: number, threshold = 0.5) {
+    if (Math.abs(delta) < threshold) return 'text-amber-600';
+    return delta > 0 ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold';
+  }
+  function bPopClass(delta: number) {
+    if (Math.abs(delta) < 50) return 'text-amber-600';
+    return delta > 0 ? 'text-emerald-600' : 'text-red-600';
+  }
+  function arrow(delta: number, threshold = 0.5) {
+    if (Math.abs(delta) < threshold) return '';
+    return delta > 0 ? ' ↑' : ' ↓';
   }
 
   // ── SVG: Demographic bar chart ───────────────────────────────────────────
@@ -154,11 +158,12 @@
   const BAR_PAD_B = 28;
   const BAR_PAD_T = 16;
 
+  // Use the spatial-matched deltas for bar chart (so Plan B bars use the correct matched district)
   const sortedDistrictIds = $derived(
-    [...planA.metrics.entries()]
-      .filter(([, m]) => m.vap > 0)
-      .sort((a, b) => (a[1].blackVap / a[1].vap) - (b[1].blackVap / b[1].vap))
-      .map(([id]) => id)
+    [...deltas]
+      .filter(d => d.a.vap > 0)
+      .sort((a, b) => (a.a.blackVap / a.a.vap) - (b.a.blackVap / b.a.vap))
+      .map(d => d.districtId)
   );
 
   const barChartWidth = $derived(
@@ -224,17 +229,18 @@
       const bA = d.a.vap > 0 ? (d.a.blackVap / d.a.vap) * 100 : 0;
       const bB = d.b.vap > 0 ? (d.b.blackVap / d.b.vap) * 100 : 0;
       const ppA = (compactnessA.get(d.districtId)?.polsbyPopper ?? 0).toFixed(3);
-      const ppB = (compactnessB.get(d.districtId)?.polsbyPopper ?? 0).toFixed(3);
+      const ppB = (compactnessB.get(d.matchedBId)?.polsbyPopper ?? 0).toFixed(3);
       return [
         d.districtId,
-        d.a.totalPop, d.b.totalPop, d.deltaPop,
-        bA.toFixed(1), bB.toFixed(1), (bB - bA).toFixed(1),
-        d.a.minorityVapPct.toFixed(1), d.b.minorityVapPct.toFixed(1), d.deltaMinorityVapPct.toFixed(1),
-        d.a.partisanLean.toFixed(1), d.b.partisanLean.toFixed(1), d.deltaPartisanLean.toFixed(1),
+        d.isRenumbered ? d.matchedBId : '',
+        d.a.totalPop, d.b.totalPop,
+        bA.toFixed(1), bB.toFixed(1),
+        d.a.minorityVapPct.toFixed(1), d.b.minorityVapPct.toFixed(1),
+        d.a.partisanLean.toFixed(1), d.b.partisanLean.toFixed(1),
         ppA, ppB
       ].join(',');
     });
-    const header = 'District,Pop A,Pop B,ΔPop,BVAP% A,BVAP% B,ΔBVAP%,Min% A,Min% B,ΔMin%,Lean A,Lean B,ΔLean,PP A,PP B';
+    const header = 'District A,District B (if renumbered),Pop A,Pop B,BVAP% A,BVAP% B,Min% A,Min% B,Lean A,Lean B,PP A,PP B';
     const csv = [header, ...rows].join('\n');
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
@@ -489,8 +495,9 @@
 
         <!-- Bars -->
         {#each sortedDistrictIds as distId, i}
-          {@const mA = planA.metrics.get(distId)}
-          {@const mB = planB.metrics.get(distId)}
+          {@const delta = deltas.find(d => d.districtId === distId)}
+          {@const mA = delta?.a}
+          {@const mB = delta?.b}
           {@const bvapA = mA && mA.vap > 0 ? (mA.blackVap / mA.vap) * 100 : 0}
           {@const bvapB = mB && mB.vap > 0 ? (mB.blackVap / mB.vap) * 100 : 0}
           <!-- Plan A bar -->
@@ -628,78 +635,105 @@
     </div>
   </section>
 
-  <!-- ── District comparison table ── -->
+  <!-- ── District comparison table (2-column layout) ── -->
   <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
     <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h3 class="text-sm font-semibold text-gray-800">District-Level Detail</h3>
+        <h3 class="text-sm font-semibold text-gray-800">District-Level Comparison</h3>
         <p class="text-[11px] text-gray-400 mt-0.5">
           {sortedDeltas.length} districts · click headers to sort ·
-          <span class="text-amber-600">amber rows</span> = minority VAP shift &gt;5pp
+          <span class="text-amber-600">amber rows</span> = minority VAP shift &gt;5pp ·
+          <span class="text-violet-600 font-medium">R</span> = renumbered district (spatially matched)
         </p>
       </div>
-      <div class="flex items-center gap-3 text-[11px] text-gray-500">
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-200 inline-block"></span>Plan A</span>
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-amber-200 inline-block"></span>Plan B</span>
+      <div class="flex items-center gap-4 text-[11px] text-gray-500 flex-wrap">
+        <span><span class="text-blue-600 font-bold">A</span> = Baseline &nbsp;·&nbsp; <span class="text-amber-600 font-bold">B</span> = Comparison</span>
+        <span class="text-emerald-600 font-semibold">↑</span> = B higher &nbsp;
+        <span class="text-red-500 font-semibold">↓</span> = B lower
       </div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-xs border-collapse">
-        <thead>
-          <tr class="border-b-2 border-gray-200">
-            <th class="px-3 py-2 text-left text-gray-500 font-semibold bg-gray-50" rowspan="2">District</th>
-            <th class="px-2 py-1.5 text-center text-blue-700 font-semibold bg-blue-50 border-l border-gray-200" colspan="3">Population</th>
-            <th class="px-2 py-1.5 text-center text-purple-700 font-semibold bg-purple-50 border-l border-gray-200" colspan="3">Black VAP %</th>
-            <th class="px-2 py-1.5 text-center text-violet-700 font-semibold bg-violet-50 border-l border-gray-200" colspan="3">Minority VAP %</th>
-            <th class="px-2 py-1.5 text-center text-indigo-700 font-semibold bg-indigo-50 border-l border-gray-200" colspan="3">Partisan Lean</th>
-            <th class="px-2 py-1.5 text-center text-teal-700 font-semibold bg-teal-50 border-l border-gray-200" colspan="2">Polsby-Popper</th>
-          </tr>
-          <tr class="border-b border-gray-200 bg-gray-50 text-gray-500">
-            {#each [
-              ['pop_a','A'],['pop_b','B'],['dpop','Δ'],
-              ['bvap_a','A'],['bvap_b','B'],['dbvap','Δ'],
-              ['min_a','A'],['min_b','B'],['dmin','Δ'],
-              ['lean_a','A'],['lean_b','B'],['dlean','Δ'],
-              ['pp_a','A'],['pp_b','B']
-            ] as [key, lbl], ci}
-              <th
-                class="px-2 py-1.5 font-semibold cursor-pointer hover:bg-gray-100 transition-colors whitespace-nowrap
-                  {[0,3,6,9,12].includes(ci) ? 'border-l border-gray-200' : ''}
-                  {lbl === 'A' ? 'text-blue-600' : lbl === 'B' ? 'text-amber-600' : 'text-gray-600'}"
-                onclick={() => toggleSort(key)}
-              >
-                {lbl}{sortIcon(key)}
-              </th>
-            {/each}
-          </tr>
-        </thead>
-        <tbody>
-          {#each sortedDeltas as d (d.districtId)}
-            {@const bvapA = d.a.vap > 0 ? (d.a.blackVap / d.a.vap) * 100 : 0}
-            {@const bvapB = d.b.vap > 0 ? (d.b.blackVap / d.b.vap) * 100 : 0}
-            {@const dbvap = bvapB - bvapA}
-            {@const ppA = compactnessA.get(d.districtId)?.polsbyPopper ?? 0}
-            {@const ppB = compactnessB.get(d.districtId)?.polsbyPopper ?? 0}
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors {d.minorityFlagged ? 'bg-amber-50 hover:bg-amber-100' : ''}">
-              <td class="px-3 py-2 font-bold text-gray-800 {d.minorityFlagged ? 'text-amber-800' : ''}">{d.districtId}</td>
-              <td class="px-2 py-2 text-right font-mono text-blue-700 border-l border-gray-100">{fmtN(d.a.totalPop)}</td>
-              <td class="px-2 py-2 text-right font-mono text-amber-700">{fmtN(d.b.totalPop)}</td>
-              <td class="px-2 py-2 text-right font-mono {dClass(d.deltaPop, 500)}">{fmtDelta(d.deltaPop, false, 500)}</td>
-              <td class="px-2 py-2 text-right font-mono text-blue-700 border-l border-gray-100 {bvapA > 50 ? 'font-bold' : ''}">{fmtPct(bvapA)}</td>
-              <td class="px-2 py-2 text-right font-mono text-amber-700 {bvapB > 50 ? 'font-bold' : ''}">{fmtPct(bvapB)}</td>
-              <td class="px-2 py-2 text-right font-mono {dClass(dbvap, 0.5)}">{fmtDelta(dbvap, true, 0.5)}</td>
-              <td class="px-2 py-2 text-right font-mono text-blue-700 border-l border-gray-100 {d.a.minorityVapPct > 50 ? 'font-bold' : ''}">{fmtPct(d.a.minorityVapPct)}</td>
-              <td class="px-2 py-2 text-right font-mono text-amber-700 {d.b.minorityVapPct > 50 ? 'font-bold' : ''}">{fmtPct(d.b.minorityVapPct)}</td>
-              <td class="px-2 py-2 text-right font-mono {d.minorityFlagged ? 'text-amber-700 font-bold' : dClass(d.deltaMinorityVapPct, 0.5)}">{fmtDelta(d.deltaMinorityVapPct, true, 0.5)}</td>
-              <td class="px-2 py-2 text-right font-mono border-l border-gray-100 {d.a.partisanLean >= 50 ? 'text-blue-600' : 'text-red-500'}">{fmtPct(d.a.partisanLean)}</td>
-              <td class="px-2 py-2 text-right font-mono {d.b.partisanLean >= 50 ? 'text-blue-600' : 'text-red-500'}">{fmtPct(d.b.partisanLean)}</td>
-              <td class="px-2 py-2 text-right font-mono {dClass(d.deltaPartisanLean, 0.5)}">{fmtDelta(d.deltaPartisanLean, true, 0.5)}</td>
-              <td class="px-2 py-2 text-right font-mono text-blue-700 border-l border-gray-100">{ppA.toFixed(3)}</td>
-              <td class="px-2 py-2 text-right font-mono text-amber-700">{ppB.toFixed(3)}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+
+    <div class="grid grid-cols-2 divide-x divide-gray-200">
+      {#each [leftDeltas, rightDeltas] as half}
+        <div class="overflow-x-auto">
+          <table class="w-full text-[11px] border-collapse">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50 text-gray-500 sticky top-0">
+                <th
+                  class="px-2 py-2 text-left font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+                  onclick={() => toggleSort('id')}
+                >D#{sortIcon('id')}</th>
+                <th class="px-1 py-2 text-right text-blue-600 font-semibold">Pop A</th>
+                <th
+                  class="px-1 py-2 text-right font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+                  onclick={() => toggleSort('pop_b')}
+                >Pop B{sortIcon('pop_b')}</th>
+                <th
+                  class="px-1 py-2 text-right text-blue-600 font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+                  onclick={() => toggleSort('lean_a')}
+                >Lean A{sortIcon('lean_a')}</th>
+                <th
+                  class="px-1 py-2 text-right font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+                  onclick={() => toggleSort('lean_b')}
+                >Lean B{sortIcon('lean_b')}</th>
+                <th
+                  class="px-1 py-2 text-right text-blue-600 font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+                  onclick={() => toggleSort('bvap_a')}
+                >BVAP A{sortIcon('bvap_a')}</th>
+                <th
+                  class="px-1 py-2 text-right font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+                  onclick={() => toggleSort('bvap_b')}
+                >BVAP B{sortIcon('bvap_b')}</th>
+                <th
+                  class="px-1 py-2 text-right text-blue-600 font-semibold cursor-pointer hover:bg-gray-100"
+                  onclick={() => toggleSort('pp_b')}
+                  title="Polsby-Popper compactness"
+                >PP A</th>
+                <th
+                  class="px-1 py-2 text-right font-semibold cursor-pointer hover:bg-gray-100"
+                  onclick={() => toggleSort('pp_b')}
+                  title="Polsby-Popper compactness"
+                >PP B{sortIcon('pp_b')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each half as d (d.districtId)}
+                {@const bvapA = d.a.vap > 0 ? (d.a.blackVap / d.a.vap) * 100 : 0}
+                {@const bvapB = d.b.vap > 0 ? (d.b.blackVap / d.b.vap) * 100 : 0}
+                {@const ppA  = compactnessA.get(d.districtId)?.polsbyPopper ?? 0}
+                {@const ppB  = compactnessB.get(d.matchedBId)?.polsbyPopper ?? 0}
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors {d.minorityFlagged ? 'bg-amber-50 hover:bg-amber-100' : ''}">
+                  <!-- District ID + renumbering badge -->
+                  <td class="px-2 py-1.5 font-bold text-gray-800 whitespace-nowrap">
+                    {d.districtId}
+                    {#if d.isRenumbered}
+                      <span class="ml-0.5 text-[9px] text-violet-600 font-bold align-top" title="Spatially matched to Plan B district {d.matchedBId}">→{d.matchedBId}</span>
+                    {/if}
+                  </td>
+                  <!-- Population -->
+                  <td class="px-1 py-1.5 text-right font-mono text-blue-700 tabular-nums">{fmtN(d.a.totalPop)}</td>
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums {bPopClass(d.deltaPop)}">
+                    {fmtN(d.b.totalPop)}{arrow(d.deltaPop, 50)}
+                  </td>
+                  <!-- Partisan lean -->
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums {leanClass(d.a.partisanLean)}">{fmtLean(d.a.partisanLean)}</td>
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums {leanClass(d.b.partisanLean)}">
+                    {fmtLean(d.b.partisanLean)}{arrow(d.deltaPartisanLean)}
+                  </td>
+                  <!-- Black VAP % -->
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums text-blue-700 {bvapA > 50 ? 'font-bold' : ''}">{bvapA.toFixed(1)}%</td>
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums {bValClass(bvapB - bvapA)} {bvapB > 50 ? 'font-bold' : ''}">
+                    {bvapB.toFixed(1)}%{arrow(bvapB - bvapA)}
+                  </td>
+                  <!-- Polsby-Popper -->
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums text-blue-700">{ppA.toFixed(3)}</td>
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums {bValClass(ppB - ppA, 0.01)}">{ppB.toFixed(3)}{arrow(ppB - ppA, 0.01)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/each}
     </div>
   </section>
 

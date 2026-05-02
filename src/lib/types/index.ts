@@ -46,7 +46,9 @@ export interface DistrictMetrics {
 }
 
 export interface DistrictDelta {
-  districtId: string;
+  districtId: string;        // Plan A district ID (display key)
+  matchedBId: string;        // Plan B district ID matched to (may differ if renumbered)
+  isRenumbered: boolean;     // true when the B plan uses a different district number
   a: DistrictMetrics;
   b: DistrictMetrics;
   deltaPop: number;
