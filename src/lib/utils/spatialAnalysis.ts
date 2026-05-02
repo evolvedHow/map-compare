@@ -83,6 +83,60 @@ export function buildDeltas(
   });
 }
 
+export function metricsFromGeoJsonProperties(
+  fc: GeoJSON.FeatureCollection
+): Map<string, DistrictMetrics> {
+  const result = new Map<string, DistrictMetrics>();
+
+  fc.features.forEach((feature, i) => {
+    const p = feature.properties ?? {};
+    const id = String(
+      p.district ?? p.DISTRICT ?? p.DISTRICTID ?? p.District ??
+      p.NAME ?? p.name ?? i + 1
+    );
+
+    const pop = Number(p.pop ?? p.TOTPOP ?? 0);
+    const tvap = Number(p.tvap ?? p.VAP ?? pop * 0.75);
+    const partisan = Number(p.partisan ?? 0.5);
+
+    let blackVap: number, asianVap: number, hispanicVap: number, minorityVapPct: number;
+
+    if (p.bvap !== undefined) {
+      // Senate/House format: absolute VAP counts
+      blackVap = Number(p.bvap ?? 0);
+      asianVap = Number(p.avap ?? 0);
+      hispanicVap = Number(p.hvap ?? 0);
+      const bipocVap = Number(p.bipoc_vap ?? blackVap + asianVap + hispanicVap);
+      minorityVapPct = tvap > 0 ? (bipocVap / tvap) * 100 : 0;
+    } else {
+      // Congress format: ratio values
+      const pctBlack = Number(p.pct_bvap_al ?? 0);
+      const pctAsian = Number(p.pct_avap_al ?? 0);
+      const pctHispanic = Number(p.pct_hvp ?? 0);
+      const pctWhite = Number(p.pct_wvap_al ?? 0);
+      blackVap = pctBlack * tvap;
+      asianVap = pctAsian * tvap;
+      hispanicVap = pctHispanic * tvap;
+      minorityVapPct = (1 - pctWhite) * 100;
+    }
+
+    result.set(id, {
+      districtId: id,
+      totalPop: pop,
+      vap: tvap,
+      blackVap,
+      hispanicVap,
+      asianVap,
+      minorityVapPct,
+      demVotes: partisan * 1000,
+      repVotes: (1 - partisan) * 1000,
+      partisanLean: partisan * 100
+    });
+  });
+
+  return result;
+}
+
 export function districtId(feature: GeoJSON.Feature, fallback: number): string {
   const p = feature.properties ?? {};
   return String(

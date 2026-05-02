@@ -2,17 +2,17 @@
   import { onMount, onDestroy } from 'svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
-  import type { ShapefileEntry, DistrictMetrics } from '../types';
+  import type { DistrictMetrics } from '../types';
 
   interface Props {
-    shapefile: ShapefileEntry | null;
+    geojson: GeoJSON.FeatureCollection | null;
     metrics: Map<string, DistrictMetrics> | null;
     colorBy: 'pop' | 'minority_vap' | 'partisan';
     label: string;
     onMapReady?: (map: L.Map) => void;
   }
 
-  let { shapefile, metrics, colorBy, label, onMapReady }: Props = $props();
+  let { geojson, metrics, colorBy, label, onMapReady }: Props = $props();
 
   let mapEl: HTMLDivElement;
   let map: L.Map;
@@ -20,12 +20,10 @@
 
   onMount(() => {
     map = L.map(mapEl, { zoomControl: true }).setView([32.7, -83.5], 7);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 18
     }).addTo(map);
-
     onMapReady?.(map);
   });
 
@@ -35,7 +33,6 @@
 
   function getColor(value: number, metric: string): string {
     if (metric === 'partisan') {
-      // Blue-red scale centered at 50%
       if (value >= 65) return '#1a4fa0';
       if (value >= 55) return '#4c8ed9';
       if (value >= 50) return '#93b8e8';
@@ -50,7 +47,7 @@
       if (value >= 15) return '#ddd6fe';
       return '#f5f3ff';
     }
-    // pop — green scale (relative, placeholder)
+    // pop — green scale
     if (value >= 80000) return '#14532d';
     if (value >= 60000) return '#15803d';
     if (value >= 40000) return '#4ade80';
@@ -59,33 +56,34 @@
   }
 
   function buildTooltip(id: string, m: DistrictMetrics | undefined): string {
-    if (!m) return `<strong>District ${id}</strong><br><em>No demographic data</em>`;
+    if (!m) return `<strong>District ${id}</strong><br><em>No data</em>`;
+    const bvapPct = m.vap > 0 ? (m.blackVap / m.vap) * 100 : 0;
     const sign = m.partisanLean >= 50 ? 'D' : 'R';
     const margin = Math.abs(m.partisanLean - 50).toFixed(1);
     return `
       <strong>District ${id}</strong><br>
       Pop: ${m.totalPop.toLocaleString()}<br>
       VAP: ${m.vap.toLocaleString()}<br>
+      Black VAP: ${bvapPct.toFixed(1)}%<br>
       Minority VAP: ${m.minorityVapPct.toFixed(1)}%<br>
       Partisan: ${sign}+${margin}%
     `;
   }
 
-  // Re-render layer whenever shapefile, metrics, or colorBy change
   $effect(() => {
-    if (!map || !shapefile) return;
+    if (!map || !geojson) return;
 
     if (geojsonLayer) {
       map.removeLayer(geojsonLayer);
       geojsonLayer = null;
     }
 
-    geojsonLayer = L.geoJSON(shapefile.geojson as GeoJSON.GeoJsonObject, {
+    geojsonLayer = L.geoJSON(geojson as GeoJSON.GeoJsonObject, {
       style: feature => {
         if (!feature) return {};
         const props = feature.properties ?? {};
         const id = String(
-          props.DISTRICT ?? props.district ?? props.DISTRICTID ??
+          props.district ?? props.DISTRICT ?? props.DISTRICTID ??
           props.District ?? props.NAME ?? props.name ?? '?'
         );
         const m = metrics?.get(id);
@@ -93,18 +91,17 @@
           colorBy === 'pop' ? (m?.totalPop ?? 0)
           : colorBy === 'minority_vap' ? (m?.minorityVapPct ?? 0)
           : (m?.partisanLean ?? 50);
-
         return {
           fillColor: getColor(value, colorBy),
-          fillOpacity: 0.65,
-          color: '#555',
-          weight: 1
+          fillOpacity: 0.7,
+          color: '#fff',
+          weight: 1.5
         };
       },
       onEachFeature: (feature, layer) => {
         const props = feature.properties ?? {};
         const id = String(
-          props.DISTRICT ?? props.district ?? props.DISTRICTID ??
+          props.district ?? props.DISTRICT ?? props.DISTRICTID ??
           props.District ?? props.NAME ?? props.name ?? '?'
         );
         const m = metrics?.get(id);
@@ -114,14 +111,14 @@
 
     const bounds = geojsonLayer.getBounds();
     if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [16, 16] });
+      map.fitBounds(bounds, { padding: [12, 12] });
     }
   });
 </script>
 
 <div class="flex flex-col h-full">
-  <div class="text-sm font-semibold text-center py-2 bg-white border-b border-gray-200">
+  <div class="text-xs font-semibold text-center py-1.5 px-2 bg-white border-b border-gray-200 truncate text-gray-700">
     {label}
   </div>
-  <div bind:this={mapEl} class="flex-1" style="min-height: 420px;"></div>
+  <div bind:this={mapEl} class="flex-1"></div>
 </div>
