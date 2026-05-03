@@ -50,6 +50,15 @@
   let mapB: L.Map | null = null;
   let syncing = false;
 
+  let previewHoverA = $state<string | null>(null);
+  let previewHoverB = $state<string | null>(null);
+  const previewHlA = $derived(
+    previewHoverA ?? (previewHoverB ? (deltas.find((d: any) => d.matchedBId === previewHoverB)?.districtId ?? null) : null)
+  );
+  const previewHlB = $derived(
+    previewHoverA ? (deltas.find((d: any) => d.districtId === previewHoverA)?.matchedBId ?? null) : previewHoverB
+  );
+
   function toggleSection(id: string) {
     const next = new Set(openSections);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -384,6 +393,8 @@
                   {colorBy}
                   label={planA?.entry.name ?? 'Plan A'}
                   onMapReady={onMapAReady}
+                  onHover={(id) => (previewHoverA = id)}
+                  highlightedId={previewHlA}
                 />
               {/key}
             </div>
@@ -395,6 +406,8 @@
                   {colorBy}
                   label={planB?.entry.name ?? 'Plan B'}
                   onMapReady={onMapBReady}
+                  onHover={(id) => (previewHoverB = id)}
+                  highlightedId={previewHlB}
                 />
               {/key}
             </div>

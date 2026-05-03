@@ -1,8 +1,11 @@
 <script lang="ts">
   import ScoreCard from './ScoreCard.svelte';
   import MapPane from './MapPane.svelte';
+  import SvgMap from './SvgMap.svelte';
   import L from 'leaflet';
   import { avgScore, seatVotesCurve, partisanBias } from '../utils/compactnessMetrics';
+  import { generateNarrative } from '../utils/aiReport';
+  import type { NarrativeReport, AnalyzePayload } from '../utils/aiReport';
   import type { DistrictCompactness, SeatVotePoint } from '../utils/compactnessMetrics';
   import type { DistrictMetrics, DistrictDelta, FairnessMetrics } from '../types';
 
@@ -222,6 +225,84 @@
     [...planB.metrics.values()].filter(m => m.partisanLean > 50).length / Math.max(1, sB.n) * 100
   );
 
+  // ── Hover sync ───────────────────────────────────────────────────────────
+  let hoveredA = $state<string | null>(null);
+  let hoveredB = $state<string | null>(null);
+  const hlA = $derived(
+    hoveredA ?? (hoveredB ? (deltas.find(d => d.matchedBId === hoveredB)?.districtId ?? null) : null)
+  );
+  const hlB = $derived(
+    hoveredA ? (deltas.find(d => d.districtId === hoveredA)?.matchedBId ?? null) : hoveredB
+  );
+  const hoveredDelta = $derived(
+    hoveredA ? deltas.find(d => d.districtId === hoveredA) :
+    hoveredB ? deltas.find(d => d.matchedBId === hoveredB) :
+    null
+  );
+
+  // ── Changed districts spotlight ──────────────────────────────────────────
+  const changedDeltas = $derived(
+    deltas
+      .filter(d => Math.abs(d.deltaPartisanLean) > 5 || Math.abs(d.deltaMinorityVapPct) > 5)
+      .sort((a, b) => Math.abs(b.deltaPartisanLean) - Math.abs(a.deltaPartisanLean))
+  );
+
+  // ── AI Narrative ─────────────────────────────────────────────────────────
+  let narrative = $state<NarrativeReport | null>(null);
+  let narrativeLoading = $state(false);
+  let narrativeError = $state<string | null>(null);
+
+  async function runGenerateNarrative() {
+    narrativeLoading = true;
+    narrativeError = null;
+    try {
+      const payload: AnalyzePayload = {
+        planA: { name: planA.entry.name, year: planA.entry.year },
+        planB: { name: planB.entry.name, year: planB.entry.year },
+        metricsA: {
+          popDevMax:       sA.maxDev,
+          polsbyPopper:    avgPPA,
+          convexHullRatio: avgCHRA,
+          countySplits:    countySplitsA ?? 0,
+          mmDistricts:     sA.mmDistricts,
+          bvapMaj:         sA.bvapMaj,
+          demSeats:        sA.demSeats,
+          efficiencyGap:   fairnessA.efficiencyGap * 100,
+          meanMedian:      fairnessA.meanMedian * 100,
+          partisanBias:    biasA,
+        },
+        metricsB: {
+          popDevMax:       sB.maxDev,
+          polsbyPopper:    avgPPB,
+          convexHullRatio: avgCHRB,
+          countySplits:    countySplitsB ?? 0,
+          mmDistricts:     sB.mmDistricts,
+          bvapMaj:         sB.bvapMaj,
+          demSeats:        sB.demSeats,
+          efficiencyGap:   fairnessB.efficiencyGap * 100,
+          meanMedian:      fairnessB.meanMedian * 100,
+          partisanBias:    biasB,
+        },
+        topChanges: changedDeltas.slice(0, 12).map(d => ({
+          id:          d.districtId,
+          matchedBId:  d.matchedBId,
+          renumbered:  d.isRenumbered,
+          leanA:       fmtLean(d.a.partisanLean),
+          leanB:       fmtLean(d.b.partisanLean),
+          bvapA:       (d.a.vap > 0 ? (d.a.blackVap / d.a.vap) * 100 : 0).toFixed(1),
+          bvapB:       (d.b.vap > 0 ? (d.b.blackVap / d.b.vap) * 100 : 0).toFixed(1),
+        })),
+        totalDistricts:      sA.n,
+        significantlyChanged: changedDeltas.length,
+      };
+      narrative = await generateNarrative(payload);
+    } catch (e: any) {
+      narrativeError = e.message ?? 'Failed to generate analysis';
+    } finally {
+      narrativeLoading = false;
+    }
+  }
+
   // ── Export ───────────────────────────────────────────────────────────────
 
   function exportCsv() {
@@ -297,8 +378,92 @@
     </div>
   </div>
 
+  <!-- ── AI Narrative ── -->
+  <section class="bg-gradient-to-br from-indigo-50 to-white rounded-2xl border border-indigo-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-3 border-b border-indigo-100 bg-indigo-50/50 flex items-center justify-between gap-4 flex-wrap">
+      <div>
+        <h3 class="text-sm font-bold text-indigo-900">AI Analysis</h3>
+        <p class="text-[11px] text-indigo-400 mt-0.5">Nonpartisan AI assessment · configure AI_PROVIDER and AI_API_KEY in .env</p>
+      </div>
+      {#if !narrative && !narrativeLoading}
+        <button
+          onclick={runGenerateNarrative}
+          class="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors print:hidden"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Generate Analysis
+        </button>
+      {/if}
+    </div>
+
+    {#if narrativeLoading}
+      <div class="px-5 py-8 flex items-center gap-3 text-indigo-500">
+        <svg class="animate-spin w-5 h-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span class="text-sm italic">Generating analysis… this may take 5–15 seconds</span>
+      </div>
+    {:else if narrativeError}
+      <div class="px-5 py-4 text-sm text-red-600 flex items-start gap-2">
+        <span class="shrink-0 font-bold mt-0.5">!</span>
+        <div>
+          <p>{narrativeError}</p>
+          <button onclick={runGenerateNarrative} class="mt-1 text-xs text-red-500 underline print:hidden">Try again</button>
+        </div>
+      </div>
+    {:else if narrative}
+      <div class="p-5 space-y-4">
+        <p class="text-sm text-gray-800 leading-relaxed">{narrative.execSummary}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          <div>
+            <h4 class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Demographic Impact</h4>
+            <p class="text-xs text-gray-700 leading-relaxed">{narrative.demographicImpact}</p>
+          </div>
+          <div>
+            <h4 class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Partisan Impact</h4>
+            <p class="text-xs text-gray-700 leading-relaxed">{narrative.partisanImpact}</p>
+          </div>
+          <div>
+            <h4 class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Geographic Compactness</h4>
+            <p class="text-xs text-gray-700 leading-relaxed">{narrative.compactnessNotes}</p>
+          </div>
+          <div>
+            <h4 class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">VRA Considerations</h4>
+            <p class="text-xs text-gray-700 leading-relaxed">{narrative.vraConsiderations}</p>
+          </div>
+        </div>
+        {#if narrative.keyFindings?.length}
+          <div class="border-t border-indigo-100 pt-3">
+            <h4 class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-2">Key Findings</h4>
+            <ul class="space-y-1.5">
+              {#each narrative.keyFindings as finding}
+                <li class="text-xs text-gray-700 leading-relaxed flex gap-2">
+                  <span class="text-indigo-400 font-bold shrink-0 mt-0.5">▸</span>
+                  <span>{finding}</span>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+        <button onclick={() => { narrative = null; }} class="text-[10px] text-gray-400 hover:text-gray-600 transition-colors print:hidden">
+          ↺ Regenerate
+        </button>
+      </div>
+    {:else}
+      <div class="px-5 py-5 text-center text-sm text-indigo-300 italic print:hidden">
+        Click "Generate Analysis" to get an AI-powered nonpartisan assessment of these redistricting changes.
+      </div>
+      <div class="hidden print:block px-5 py-3 text-xs text-gray-400 italic">
+        AI analysis not generated for this report.
+      </div>
+    {/if}
+  </section>
+
   <!-- ── Maps ── -->
-  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:hidden">
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
     <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50">
       <span class="text-xs font-semibold text-gray-500">District Maps</span>
       <div class="flex gap-1">
@@ -313,7 +478,8 @@
         {/each}
       </div>
     </div>
-    <div class="grid grid-cols-2" style="height: 260px;">
+    <!-- Leaflet maps: screen only -->
+    <div class="grid grid-cols-2 print:hidden" style="height: 260px;">
       <div class="border-r border-gray-200 h-full">
         <MapPane
           geojson={planA.geojson}
@@ -321,6 +487,8 @@
           {colorBy}
           label={planA.entry.name}
           onMapReady={onMapReadyA}
+          onHover={(id) => (hoveredA = id)}
+          highlightedId={hlA}
         />
       </div>
       <div class="h-full">
@@ -330,9 +498,52 @@
           {colorBy}
           label={planB.entry.name}
           onMapReady={onMapReadyB}
+          onHover={(id) => (hoveredB = id)}
+          highlightedId={hlB}
         />
       </div>
     </div>
+
+    <!-- Hover comparison panel: screen only -->
+    {#if hoveredDelta}
+      {@const bvapA = hoveredDelta.a.vap > 0 ? (hoveredDelta.a.blackVap / hoveredDelta.a.vap) * 100 : 0}
+      {@const bvapB = hoveredDelta.b.vap > 0 ? (hoveredDelta.b.blackVap / hoveredDelta.b.vap) * 100 : 0}
+      <div class="px-5 py-2 bg-indigo-50 border-t border-indigo-100 text-xs flex gap-4 flex-wrap items-center print:hidden">
+        <span class="font-bold text-gray-800">
+          D{hoveredDelta.districtId}{hoveredDelta.isRenumbered ? ` → B-D${hoveredDelta.matchedBId}` : ''}
+        </span>
+        <span>
+          Lean:
+          <span class="{leanClass(hoveredDelta.a.partisanLean)} font-bold">{fmtLean(hoveredDelta.a.partisanLean)}</span>
+          →
+          <span class="{leanClass(hoveredDelta.b.partisanLean)} font-bold">{fmtLean(hoveredDelta.b.partisanLean)}</span>
+        </span>
+        <span>Pop: {fmtN(hoveredDelta.a.totalPop)} → {fmtN(hoveredDelta.b.totalPop)}</span>
+        <span>Black VAP: {bvapA.toFixed(1)}% → {bvapB.toFixed(1)}%</span>
+        <span>Minority VAP: {hoveredDelta.a.minorityVapPct.toFixed(1)}% → {hoveredDelta.b.minorityVapPct.toFixed(1)}%</span>
+      </div>
+    {/if}
+
+    <!-- SVG maps: print only -->
+    <div class="hidden print:grid print:grid-cols-2 gap-4 px-4 py-3">
+      <SvgMap
+        geojson={planA.geojson}
+        metrics={planA.metrics}
+        {colorBy}
+        label={planA.entry.name}
+        width={340}
+        height={230}
+      />
+      <SvgMap
+        geojson={planB.geojson}
+        metrics={planB.metrics}
+        {colorBy}
+        label={planB.entry.name}
+        width={340}
+        height={230}
+      />
+    </div>
+
     <!-- Legend -->
     <div class="px-5 py-2 border-t border-gray-100 flex items-center gap-5 text-[11px] text-gray-500 bg-gray-50">
       {#if colorBy === 'partisan'}
@@ -350,6 +561,71 @@
       {/if}
     </div>
   </div>
+
+  <!-- ── Changed Districts Spotlight ── -->
+  {#if changedDeltas.length > 0}
+  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
+    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
+      <h3 class="text-sm font-semibold text-gray-800">
+        Changed Districts
+        <span class="ml-1.5 text-xs font-normal text-gray-400">({changedDeltas.length} of {deltas.length} shifted &gt;5pp)</span>
+      </h3>
+      <p class="text-[11px] text-gray-400 mt-0.5">
+        Left map: Plan A boundaries colored by partisan shift. Blue = D gain, red = R gain, gray = stable (&lt;5pp). Amber badge = minority VAP shift &gt;5pp (VRA-relevant).
+      </p>
+    </div>
+    <div class="p-5">
+      <div class="flex gap-6 flex-wrap">
+        <!-- Delta choropleth -->
+        <div class="shrink-0">
+          <SvgMap
+            geojson={planA.geojson}
+            metrics={planA.metrics}
+            colorBy="delta"
+            {deltas}
+            width={260}
+            height={200}
+          />
+          <div class="flex items-center gap-2.5 mt-1.5 flex-wrap text-[10px] text-gray-500">
+            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#1d4ed8] inline-block"></span>D+10+</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#93c5fd] inline-block"></span>D+5–10</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#d1d5db] inline-block"></span>Stable</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#fca5a5] inline-block"></span>R+5–10</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#b91c1c] inline-block"></span>R+10+</span>
+          </div>
+        </div>
+        <!-- Changed district cards -->
+        <div class="flex-1 min-w-[260px]">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {#each changedDeltas as d}
+              {@const bvapA = d.a.vap > 0 ? (d.a.blackVap / d.a.vap) * 100 : 0}
+              {@const bvapB = d.b.vap > 0 ? (d.b.blackVap / d.b.vap) * 100 : 0}
+              <div class="border rounded-xl p-2.5 {d.minorityFlagged ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="text-[11px] font-bold text-gray-800">D{d.districtId}</span>
+                  {#if d.isRenumbered}
+                    <span class="text-[9px] text-violet-600 font-medium">→{d.matchedBId}</span>
+                  {/if}
+                  {#if d.minorityFlagged}
+                    <span class="ml-auto text-[9px] bg-amber-200 text-amber-700 px-1 rounded font-bold">VRA</span>
+                  {/if}
+                </div>
+                <div class="text-[11px] flex items-center gap-1">
+                  <span class="{leanClass(d.a.partisanLean)}">{fmtLean(d.a.partisanLean)}</span>
+                  <span class="text-gray-300">→</span>
+                  <span class="{leanClass(d.b.partisanLean)} font-semibold">{fmtLean(d.b.partisanLean)}</span>
+                </div>
+                <div class="text-[10px] text-gray-500 mt-0.5">
+                  BVAP: {bvapA.toFixed(1)}% → <span class="{bValClass(bvapB - bvapA)}">{bvapB.toFixed(1)}%</span>
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {/if}
 
   <!-- ── Score cards: Population & Compactness ── -->
   <section>
