@@ -463,7 +463,7 @@
   </section>
 
   <!-- ── Demographic bar chart ── -->
-  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
     <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
       <h3 class="text-sm font-semibold text-gray-800">Black Voting-Age Population by District</h3>
       <p class="text-[11px] text-gray-400 mt-0.5">
@@ -474,7 +474,7 @@
         <span class="text-amber-500 font-medium">■ Plan B</span>
       </p>
     </div>
-    <div class="overflow-x-auto px-4 py-4">
+    <div class="overflow-x-auto print:overflow-visible px-4 py-4">
       <svg
         width={barChartWidth + BAR_PAD_L}
         height={BAR_CHART_H}
@@ -541,7 +541,7 @@
   </section>
 
   <!-- ── Seats-votes curve ── -->
-  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
     <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
       <h3 class="text-sm font-semibold text-gray-800">Seats-Votes Responsiveness Curve</h3>
       <p class="text-[11px] text-gray-400 mt-0.5">
@@ -636,7 +636,7 @@
   </section>
 
   <!-- ── District comparison table (2-column layout) ── -->
-  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
     <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-wrap gap-3">
       <div>
         <h3 class="text-sm font-semibold text-gray-800">District-Level Comparison</h3>
@@ -655,7 +655,7 @@
 
     <div class="grid grid-cols-2 divide-x divide-gray-200">
       {#each [leftDeltas, rightDeltas] as half}
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto print:overflow-visible">
           <table class="w-full text-[11px] border-collapse">
             <thead>
               <tr class="border-b border-gray-200 bg-gray-50 text-gray-500 sticky top-0">

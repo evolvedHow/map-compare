@@ -201,9 +201,9 @@
   };
 </script>
 
-<div class="flex h-full overflow-hidden">
+<div class="flex h-full overflow-hidden print:block print:h-auto print:overflow-visible">
   <!-- ─── Sidebar ─── -->
-  <aside class="w-72 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden select-none">
+  <aside class="w-72 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden select-none print:hidden">
     <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
       <h2 class="text-sm font-semibold text-gray-700">Plan Browser</h2>
       <p class="text-xs text-gray-400 mt-0.5 leading-tight">
@@ -280,7 +280,7 @@
   </aside>
 
   <!-- ─── Main content ─── -->
-  <main class="flex-1 overflow-y-auto bg-gray-50">
+  <main class="flex-1 overflow-y-auto bg-gray-50 print:overflow-visible print:h-auto print:w-full">
 
     {#if loadError}
       <div class="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
@@ -289,7 +289,7 @@
     {/if}
 
     <!-- Selection header bar -->
-    <div class="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 flex-wrap shadow-sm">
+    <div class="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 flex-wrap shadow-sm print:hidden">
       <div class="flex items-center gap-2.5 min-w-0">
         <span class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">A</span>
         <div class="min-w-0">

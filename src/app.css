@@ -12,3 +12,21 @@
   font-family: Roboto, Arial, sans-serif;
   font-size: 14px;
 }
+
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Ensure SVG charts are never clipped */
+  svg {
+    overflow: visible !important;
+  }
+
+  /* Section page breaks */
+  section {
+    break-inside: avoid;
+  }
+}

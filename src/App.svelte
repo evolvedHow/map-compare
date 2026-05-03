@@ -1,22 +1,17 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import CompareView from './lib/components/CompareView.svelte';
-  import { shapefiles, darkMode } from './lib/stores/shapefileStore';
+  import { darkMode } from './lib/stores/shapefileStore';
 
   let dark = $state(false);
   let showSettings = $state(false);
   let stateFips = $state('13');
 
   darkMode.subscribe(v => (dark = v));
-
-  onMount(() => {
-    shapefiles.load();
-  });
 </script>
 
-<div class="{dark ? 'dark' : ''} h-screen flex flex-col bg-gray-50 text-gray-900 overflow-hidden">
+<div class="{dark ? 'dark' : ''} h-screen flex flex-col bg-gray-50 text-gray-900 overflow-hidden print:h-auto print:overflow-visible print:block">
   <!-- Header -->
-  <header class="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-20">
+  <header class="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-20 print:hidden">
     <div class="px-6 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div>
@@ -74,7 +69,7 @@
   {/if}
 
   <!-- Main: full height below header -->
-  <div class="flex-1 overflow-hidden">
+  <div class="flex-1 overflow-hidden print:overflow-visible print:h-auto">
     <CompareView />
   </div>
 </div>
