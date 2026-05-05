@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, untrack } from 'svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
   import type { DistrictMetrics } from '../types';
@@ -79,13 +79,16 @@
 
   $effect(() => {
     if (!map || !geojson) return;
-    if (geojsonLayer) {
-      map.removeLayer(geojsonLayer);
-      geojsonLayer = null;
+
+    // Use untrack to read the old layer without making it a reactive dependency.
+    // Without this, writing geojsonLayer inside this same effect would re-trigger it → infinite loop.
+    const oldLayer = untrack(() => geojsonLayer);
+    if (oldLayer) {
+      map.removeLayer(oldLayer);
     }
     layerById.clear();
 
-    geojsonLayer = L.geoJSON(geojson as GeoJSON.GeoJsonObject, {
+    const newLayer = L.geoJSON(geojson as GeoJSON.GeoJsonObject, {
       style: feature => {
         if (!feature) return {};
         const id = featureId(feature);
@@ -110,7 +113,8 @@
       }
     }).addTo(map);
 
-    const bounds = geojsonLayer.getBounds();
+    geojsonLayer = newLayer;
+    const bounds = newLayer.getBounds();
     if (bounds.isValid()) map.fitBounds(bounds, { padding: [12, 12] });
   });
 

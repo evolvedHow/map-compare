@@ -29,7 +29,8 @@
   }
 
   let catalog = $state<CatalogEntry[]>([]);
-  let loadingFile = $state<string | null>(null);
+  let loadingFileA = $state<string | null>(null);
+  let loadingFileB = $state<string | null>(null);
   let loadError = $state<string | null>(null);
   let planA = $state<LoadedPlan | null>(null);
   let planB = $state<LoadedPlan | null>(null);
@@ -94,7 +95,8 @@
   }
 
   async function selectPlan(entry: CatalogEntry) {
-    if (loadingFile) return;
+    // Block double-loading the same file
+    if (loadingFileA === entry.filename || loadingFileB === entry.filename) return;
 
     // Deselect if already selected
     if (planA?.entry.filename === entry.filename) {
@@ -115,8 +117,9 @@
     }
 
     // Chamber restriction: Plan B must match Plan A's chamber
-    if (planA && entry.chamber !== planA.entry.chamber) {
-      loadError = `Chamber mismatch: cannot compare a ${chamberLabels[planA.entry.chamber]} plan with a ${chamberLabels[entry.chamber]} plan. Select another ${chamberLabels[planA.entry.chamber]} plan, or deselect Plan A first.`;
+    const chamberA = planA?.entry.chamber ?? catalog.find(e => e.filename === loadingFileA)?.chamber;
+    if (chamberA && entry.chamber !== chamberA) {
+      loadError = `Chamber mismatch: cannot compare a ${chamberLabels[chamberA]} plan with a ${chamberLabels[entry.chamber]} plan. Select another ${chamberLabels[chamberA]} plan, or deselect Plan A first.`;
       return;
     }
 
@@ -125,15 +128,20 @@
     compactnessA = null; compactnessB = null;
     countySplitsA = null; countySplitsB = null;
 
-    loadingFile = entry.filename;
+    // Determine slot BEFORE the async fetch to avoid race conditions
+    const isSlotA = !planA && !loadingFileA;
+    if (isSlotA) loadingFileA = entry.filename;
+    else loadingFileB = entry.filename;
+
     try {
       const loaded = await loadPlan(entry);
-      if (!planA) planA = loaded;
+      if (isSlotA) planA = loaded;
       else planB = loaded;
     } catch (e) {
       loadError = `Failed to load "${entry.name}": ${e instanceof Error ? e.message : String(e)}`;
     }
-    loadingFile = null;
+    if (isSlotA) loadingFileA = null;
+    else loadingFileB = null;
   }
 
   async function generateReport() {
@@ -216,8 +224,8 @@
     <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
       <h2 class="text-sm font-semibold text-gray-700">Plan Browser</h2>
       <p class="text-xs text-gray-400 mt-0.5 leading-tight">
-        Click once = baseline <span class="font-bold text-blue-600">A</span>.
-        Click again = comparison <span class="font-bold text-amber-500">B</span>.
+        1st click = baseline <span class="font-bold text-blue-600">A</span>.
+        Click a <em>different</em> plan = comparison <span class="font-bold text-amber-500">B</span>.
       </p>
     </div>
 
@@ -236,13 +244,13 @@
             {#each grouped[chamber] as entry (entry.filename)}
               {@const isA = planA?.entry.filename === entry.filename}
               {@const isB = planB?.entry.filename === entry.filename}
-              {@const isLoading = loadingFile === entry.filename}
+              {@const isLoading = loadingFileA === entry.filename || loadingFileB === entry.filename}
               {@const isLocked = !!planA && !isA && !isB && entry.chamber !== planA.entry.chamber}
               <button
                 class="w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors
                   {isA ? 'bg-blue-50 border-l-2 border-blue-500' : isB ? 'bg-amber-50 border-l-2 border-amber-400' : isLocked ? 'border-l-2 border-transparent opacity-35 cursor-not-allowed' : 'border-l-2 border-transparent hover:bg-gray-50 hover:border-gray-200'}"
                 onclick={() => selectPlan(entry)}
-                disabled={(!!loadingFile && !isLoading) || isLocked}
+                disabled={isLoading || isLocked}
                 title={isLocked ? `Only ${chamberLabels[planA!.entry.chamber]} plans can be compared` : undefined}
               >
                 <span class="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
@@ -274,6 +282,13 @@
       {/each}
     </div>
 
+    <!-- Error message in sidebar (visible where the user is clicking) -->
+    {#if loadError}
+      <div class="mx-3 mb-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700 leading-snug">
+        {loadError}
+      </div>
+    {/if}
+
     <!-- Legend -->
     <div class="px-4 py-3 border-t border-gray-100 bg-gray-50 space-y-1.5">
       <div class="flex items-center gap-2 text-xs text-gray-500">
@@ -284,18 +299,12 @@
         <span class="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">B</span>
         Comparison (right map)
       </div>
-      <p class="text-[10px] text-gray-400">Click <strong>A</strong> to swap/deselect.</p>
+      <p class="text-[10px] text-gray-400">Click <strong>A</strong> to deselect. Click <strong>B</strong> to remove comparison.</p>
     </div>
   </aside>
 
   <!-- ─── Main content ─── -->
   <main class="flex-1 overflow-y-auto bg-gray-50 print:overflow-visible print:h-auto print:w-full">
-
-    {#if loadError}
-      <div class="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-        {loadError}
-      </div>
-    {/if}
 
     <!-- Selection header bar -->
     <div class="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 flex-wrap shadow-sm print:hidden">
