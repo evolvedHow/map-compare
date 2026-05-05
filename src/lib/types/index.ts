@@ -55,7 +55,29 @@ export interface DistrictDelta {
   deltaVap: number;
   deltaMinorityVapPct: number;
   deltaPartisanLean: number;
-  minorityFlagged: boolean; // |deltaMinorityVapPct| > 5
+  minorityFlagged: boolean;  // |deltaMinorityVapPct| > 5
+  // R script 7 equivalents
+  bvapChangeLabel: string;   // 'Gained/Lost BVAP Majority/Influence' or ''
+  mvapChangeLabel: string;   // 'Gained/Lost MVAP Majority/Influence' or ''
+  partisanFlipLabel: string; // 'Gained Dem' | 'Lost Dem' | ''
+  popDeviation: number;      // b.totalPop - idealPop (plan B ideal)
+  popDeviationPct: number;   // popDeviation / idealPop
+}
+
+// R script 4 / script 8 equivalents: district counts by VRA and partisan thresholds
+export interface DistrictThresholds {
+  competitive: number;   // 46.5%–53.5% Dem
+  demDistricts: number;  // ≥50% Dem
+  repDistricts: number;  // <50% Dem
+  bvapMaj: number;       // BVAP ≥50%
+  bvapInf: number;       // BVAP 37%–50%
+  mvapMaj: number;       // MVAP ≥50%
+  mvapInf: number;       // MVAP 37%–50%
+  hvapMaj: number;       // HVAP ≥50%
+  hvapInf: number;       // HVAP 37%–50%
+  avapMaj: number;       // AVAP ≥50%
+  avapInf: number;       // AVAP 37%–50%
+  safetyTiers: Record<string, number>; // 6-tier safety breakdown
 }
 
 export interface FairnessMetrics {

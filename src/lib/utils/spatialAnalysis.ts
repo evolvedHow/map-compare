@@ -1,5 +1,5 @@
 import * as turf from '@turf/turf';
-import type { CrosswalkRow, DistrictMetrics } from '../types';
+import type { CrosswalkRow, DistrictMetrics, DistrictDelta, DistrictThresholds } from '../types';
 
 export function spatialJoin(
   districts: GeoJSON.FeatureCollection,
@@ -77,6 +77,9 @@ export function buildDeltas(
   fcB: GeoJSON.FeatureCollection,
   metricsB: Map<string, DistrictMetrics>
 ): DistrictDelta[] {
+  // Ideal population for plan B (used for per-district deviation, R script 7 equivalent)
+  const totalPopB = [...metricsB.values()].reduce((s, m) => s + m.totalPop, 0);
+  const idealPop = metricsB.size > 0 ? totalPopB / metricsB.size : 0;
   // Build centroid lists
   const cA: { id: string; lng: number; lat: number }[] = fcA.features.map((f, i) => {
     const c = turf.centroid(f).geometry.coordinates;
@@ -129,6 +132,14 @@ export function buildDeltas(
     const a = metricsA.get(idA) ?? zeroMetrics(idA);
     const b = metricsB.get(idB) ?? zeroMetrics(idA);
     const deltaMinorityVapPct = b.minorityVapPct - a.minorityVapPct;
+
+    // R script 7 equivalent: change classification
+    const bvapPctA = a.vap > 0 ? a.blackVap / a.vap : 0;
+    const bvapPctB = b.vap > 0 ? b.blackVap / b.vap : 0;
+    const mvapPctA = a.minorityVapPct / 100;
+    const mvapPctB = b.minorityVapPct / 100;
+    const popDeviation = b.totalPop - idealPop;
+
     return {
       districtId: idA,
       matchedBId: idB,
@@ -139,7 +150,12 @@ export function buildDeltas(
       deltaVap: b.vap - a.vap,
       deltaMinorityVapPct,
       deltaPartisanLean: b.partisanLean - a.partisanLean,
-      minorityFlagged: Math.abs(deltaMinorityVapPct) > 5
+      minorityFlagged: Math.abs(deltaMinorityVapPct) > 5,
+      bvapChangeLabel: classifyBvapChange(bvapPctA, bvapPctB),
+      mvapChangeLabel: classifyMvapChange(mvapPctA, mvapPctB),
+      partisanFlipLabel: classifyPartisanFlip(a.partisanLean, b.partisanLean),
+      popDeviation,
+      popDeviationPct: idealPop > 0 ? popDeviation / idealPop : 0
     };
   });
 }
@@ -196,6 +212,89 @@ export function metricsFromGeoJsonProperties(
   });
 
   return result;
+}
+
+// ── R script 8 equivalent: 6-tier partisan safety classification ──────────────
+export function safetyTier(lean: number): string {
+  // lean is 0–100 Dem percentage
+  const l = lean / 100;
+  if (l < 0.40)  return 'Safe R';
+  if (l < 0.465) return 'Lean R';
+  if (l < 0.50)  return 'Competitive R';
+  if (l < 0.535) return 'Competitive D';
+  if (l < 0.60)  return 'Lean D';
+  return 'Safe D';
+}
+
+// ── R script 7 equivalent: change classification helpers ─────────────────────
+
+// bvapPct is a 0–1 fraction
+export function classifyBvapChange(bvapPctA: number, bvapPctB: number): string {
+  if (bvapPctA >= 0.5 && bvapPctB < 0.5) return 'Lost BVAP Majority';
+  if (bvapPctA < 0.5 && bvapPctB >= 0.5) return 'Gained BVAP Majority';
+  if (bvapPctA >= 0.37 && bvapPctA < 0.5 && (bvapPctB >= 0.5 || bvapPctB < 0.37)) return 'Lost BVAP Influence';
+  if ((bvapPctA < 0.37 || bvapPctA >= 0.5) && bvapPctB >= 0.37 && bvapPctB < 0.5) return 'Gained BVAP Influence';
+  return '';
+}
+
+// mvapPct is a 0–1 fraction (minorityVapPct / 100)
+export function classifyMvapChange(mvapPctA: number, mvapPctB: number): string {
+  if (mvapPctA >= 0.5 && mvapPctB < 0.5) return 'Lost MVAP Majority';
+  if (mvapPctA < 0.5 && mvapPctB >= 0.5) return 'Gained MVAP Majority';
+  if (mvapPctA >= 0.37 && mvapPctA < 0.5 && (mvapPctB >= 0.5 || mvapPctB < 0.37)) return 'Lost MVAP Influence';
+  if ((mvapPctA < 0.37 || mvapPctA >= 0.5) && mvapPctB >= 0.37 && mvapPctB < 0.5) return 'Gained MVAP Influence';
+  return '';
+}
+
+// lean is 0–100 Dem percentage; 50 = toss-up
+export function classifyPartisanFlip(leanA: number, leanB: number): string {
+  if (leanA >= 50 && leanB < 50) return 'Lost Dem';
+  if (leanA < 50  && leanB >= 50) return 'Gained Dem';
+  return '';
+}
+
+// ── R script 4 / script 8 equivalent: count districts by VRA thresholds ──────
+export function computeThresholds(metrics: DistrictMetrics[]): DistrictThresholds {
+  const tierCounts: Record<string, number> = {
+    'Safe R': 0, 'Lean R': 0, 'Competitive R': 0,
+    'Competitive D': 0, 'Lean D': 0, 'Safe D': 0
+  };
+  let competitive = 0, demDistricts = 0, repDistricts = 0;
+  let bvapMaj = 0, bvapInf = 0;
+  let mvapMaj = 0, mvapInf = 0;
+  let hvapMaj = 0, hvapInf = 0;
+  let avapMaj = 0, avapInf = 0;
+
+  for (const m of metrics) {
+    const lean = m.partisanLean / 100;
+    const bvap = m.vap > 0 ? m.blackVap    / m.vap : 0;
+    const mvap = m.minorityVapPct / 100;
+    const hvap = m.vap > 0 ? m.hispanicVap / m.vap : 0;
+    const avap = m.vap > 0 ? m.asianVap    / m.vap : 0;
+
+    // Partisan
+    if (lean >= 0.465 && lean <= 0.535) competitive++;
+    if (lean >= 0.5) demDistricts++; else repDistricts++;
+    tierCounts[safetyTier(m.partisanLean)]++;
+
+    // BVAP
+    if (bvap >= 0.5) bvapMaj++; else if (bvap >= 0.37) bvapInf++;
+    // MVAP
+    if (mvap >= 0.5) mvapMaj++; else if (mvap >= 0.37) mvapInf++;
+    // HVAP
+    if (hvap >= 0.5) hvapMaj++; else if (hvap >= 0.37) hvapInf++;
+    // AVAP
+    if (avap >= 0.5) avapMaj++; else if (avap >= 0.37) avapInf++;
+  }
+
+  return {
+    competitive, demDistricts, repDistricts,
+    bvapMaj, bvapInf,
+    mvapMaj, mvapInf,
+    hvapMaj, hvapInf,
+    avapMaj, avapInf,
+    safetyTiers: tierCounts
+  };
 }
 
 export function districtId(feature: GeoJSON.Feature, fallback: number): string {

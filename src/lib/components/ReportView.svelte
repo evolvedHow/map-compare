@@ -4,6 +4,8 @@
   import SvgMap from './SvgMap.svelte';
   import L from 'leaflet';
   import { avgScore, seatVotesCurve, partisanBias } from '../utils/compactnessMetrics';
+  import { computeThresholds } from '../utils/spatialAnalysis';
+  import type { DistrictThresholds } from '../types';
   import { generateNarrative } from '../utils/aiReport';
   import type { NarrativeReport, AnalyzePayload } from '../utils/aiReport';
   import type { DistrictCompactness, SeatVotePoint } from '../utils/compactnessMetrics';
@@ -65,6 +67,8 @@
 
   const sA = $derived(planStats(planA));
   const sB = $derived(planStats(planB));
+  const threshA = $derived(computeThresholds([...planA.metrics.values()]));
+  const threshB = $derived(computeThresholds([...planB.metrics.values()]));
   const avgPPA = $derived(avgScore(compactnessA, 'polsbyPopper'));
   const avgPPB = $derived(avgScore(compactnessB, 'polsbyPopper'));
   const avgCHRA = $derived(avgScore(compactnessA, 'convexHullRatio'));
@@ -690,6 +694,91 @@
     </div>
   </section>
 
+  <!-- ── VRA Threshold Analysis (R script 4 / script 8 equivalents) ── -->
+  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
+    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
+      <h3 class="text-sm font-semibold text-gray-800">VRA Threshold Analysis</h3>
+      <p class="text-[11px] text-gray-400 mt-0.5">
+        District counts by demographic and partisan thresholds. Majority ≥50%, Influence 37%–50%.
+      </p>
+    </div>
+    <div class="p-5 space-y-4">
+      <!-- Threshold table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+              <th class="px-3 py-2 text-left text-gray-600 font-semibold">Category</th>
+              <th class="px-3 py-2 text-center text-blue-600 font-semibold">Plan A</th>
+              <th class="px-3 py-2 text-center text-amber-600 font-semibold">Plan B</th>
+              <th class="px-3 py-2 text-center text-gray-400 font-semibold">Δ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {#each [
+              { label: 'Competitive Districts (46.5%–53.5% Dem)', a: threshA.competitive,   b: threshB.competitive },
+              { label: 'Democratic Districts (≥50% Dem)',         a: threshA.demDistricts,  b: threshB.demDistricts },
+              { label: 'Republican Districts (<50% Dem)',         a: threshA.repDistricts,  b: threshB.repDistricts },
+              { label: '─ BVAP Majority (≥50%)',                  a: threshA.bvapMaj,       b: threshB.bvapMaj },
+              { label: '─ BVAP Influence (37%–50%)',              a: threshA.bvapInf,       b: threshB.bvapInf },
+              { label: '─ MVAP Majority (≥50%)',                  a: threshA.mvapMaj,       b: threshB.mvapMaj },
+              { label: '─ MVAP Influence (37%–50%)',              a: threshA.mvapInf,       b: threshB.mvapInf },
+              { label: '─ HVAP Majority (≥50%)',                  a: threshA.hvapMaj,       b: threshB.hvapMaj },
+              { label: '─ HVAP Influence (37%–50%)',              a: threshA.hvapInf,       b: threshB.hvapInf },
+              { label: '─ AVAP Majority (≥50%)',                  a: threshA.avapMaj,       b: threshB.avapMaj },
+              { label: '─ AVAP Influence (37%–50%)',              a: threshA.avapInf,       b: threshB.avapInf },
+            ] as row}
+              {@const diff = row.b - row.a}
+              <tr class="hover:bg-gray-50">
+                <td class="px-3 py-1.5 text-gray-700">{row.label}</td>
+                <td class="px-3 py-1.5 text-center font-semibold text-blue-700">{row.a}</td>
+                <td class="px-3 py-1.5 text-center font-semibold text-amber-600">{row.b}</td>
+                <td class="px-3 py-1.5 text-center font-semibold {diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-600' : 'text-gray-400'}">
+                  {diff > 0 ? `+${diff}` : diff === 0 ? '—' : diff}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Safety tier breakdown (R script 8 equivalent) -->
+      <div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Partisan Safety Tiers</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50">
+                <th class="px-3 py-1.5 text-left text-gray-600 font-semibold">Tier</th>
+                <th class="px-3 py-1.5 text-center text-blue-600 font-semibold">Plan A</th>
+                <th class="px-3 py-1.5 text-center text-amber-600 font-semibold">Plan B</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {#each [
+                { tier: 'Safe R',        color: 'text-red-700',    bgA: '#bc131e' },
+                { tier: 'Lean R',        color: 'text-red-500',    bgA: '#eb4956' },
+                { tier: 'Competitive R', color: 'text-pink-600',   bgA: '#c36e9e' },
+                { tier: 'Competitive D', color: 'text-indigo-500', bgA: '#7279db' },
+                { tier: 'Lean D',        color: 'text-blue-600',   bgA: '#3c6ebf' },
+                { tier: 'Safe D',        color: 'text-blue-800',   bgA: '#1f4bae' },
+              ] as row}
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-1.5 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-sm shrink-0" style="background:{row.bgA}"></span>
+                    <span class="{row.color} font-medium">{row.tier}</span>
+                  </td>
+                  <td class="px-3 py-1.5 text-center font-semibold text-blue-700">{threshA.safetyTiers[row.tier] ?? 0}</td>
+                  <td class="px-3 py-1.5 text-center font-semibold text-amber-600">{threshB.safetyTiers[row.tier] ?? 0}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Score cards: Partisan fairness ── -->
   <section>
     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-0.5">Partisan Fairness</h3>
@@ -944,6 +1033,7 @@
                   class="px-1 py-2 text-right font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
                   onclick={() => toggleSort('pop_b')}
                 >Pop B{sortIcon('pop_b')}</th>
+                <th class="px-1 py-2 text-right font-semibold whitespace-nowrap" title="Pop B deviation from ideal district size">Pop Dev%</th>
                 <th
                   class="px-1 py-2 text-right text-blue-600 font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
                   onclick={() => toggleSort('lean_a')}
@@ -952,6 +1042,7 @@
                   class="px-1 py-2 text-right font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
                   onclick={() => toggleSort('lean_b')}
                 >Lean B{sortIcon('lean_b')}</th>
+                <th class="px-1 py-2 text-left font-semibold whitespace-nowrap text-gray-400">Partisan Δ</th>
                 <th
                   class="px-1 py-2 text-right text-blue-600 font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
                   onclick={() => toggleSort('bvap_a')}
@@ -960,6 +1051,8 @@
                   class="px-1 py-2 text-right font-semibold cursor-pointer hover:bg-gray-100 whitespace-nowrap"
                   onclick={() => toggleSort('bvap_b')}
                 >BVAP B{sortIcon('bvap_b')}</th>
+                <th class="px-1 py-2 text-left font-semibold whitespace-nowrap text-gray-400">BVAP Δ</th>
+                <th class="px-1 py-2 text-left font-semibold whitespace-nowrap text-gray-400">MVAP Δ</th>
                 <th
                   class="px-1 py-2 text-right text-blue-600 font-semibold cursor-pointer hover:bg-gray-100"
                   onclick={() => toggleSort('pp_b')}
@@ -991,15 +1084,31 @@
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums {bPopClass(d.deltaPop)}">
                     {fmtN(d.b.totalPop)}{arrow(d.deltaPop, 50)}
                   </td>
+                  <!-- Pop deviation from ideal (R script 7 equivalent) -->
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums text-[10px] {Math.abs(d.popDeviationPct) > 0.05 ? 'text-red-600 font-semibold' : 'text-gray-400'}">
+                    {d.popDeviationPct >= 0 ? '+' : ''}{(d.popDeviationPct * 100).toFixed(1)}%
+                  </td>
                   <!-- Partisan lean -->
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums {leanClass(d.a.partisanLean)}">{fmtLean(d.a.partisanLean)}</td>
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums {leanClass(d.b.partisanLean)}">
                     {fmtLean(d.b.partisanLean)}{arrow(d.deltaPartisanLean)}
                   </td>
+                  <!-- Partisan flip label (R script 7 equivalent) -->
+                  <td class="px-1 py-1.5 text-[10px] whitespace-nowrap {d.partisanFlipLabel === 'Gained Dem' ? 'text-blue-700 font-semibold' : d.partisanFlipLabel === 'Lost Dem' ? 'text-red-600 font-semibold' : 'text-gray-300'}">
+                    {d.partisanFlipLabel || '—'}
+                  </td>
                   <!-- Black VAP % -->
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums text-blue-700 {bvapA > 50 ? 'font-bold' : ''}">{bvapA.toFixed(1)}%</td>
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums {bValClass(bvapB - bvapA)} {bvapB > 50 ? 'font-bold' : ''}">
                     {bvapB.toFixed(1)}%{arrow(bvapB - bvapA)}
+                  </td>
+                  <!-- BVAP change label (R script 7 equivalent) -->
+                  <td class="px-1 py-1.5 text-[10px] whitespace-nowrap {d.bvapChangeLabel.includes('Gained') ? 'text-emerald-700 font-semibold' : d.bvapChangeLabel.includes('Lost') ? 'text-red-600 font-semibold' : 'text-gray-300'}">
+                    {d.bvapChangeLabel || '—'}
+                  </td>
+                  <!-- MVAP change label (R script 7 equivalent) -->
+                  <td class="px-1 py-1.5 text-[10px] whitespace-nowrap {d.mvapChangeLabel.includes('Gained') ? 'text-emerald-700 font-semibold' : d.mvapChangeLabel.includes('Lost') ? 'text-red-600 font-semibold' : 'text-gray-300'}">
+                    {d.mvapChangeLabel || '—'}
                   </td>
                   <!-- Polsby-Popper -->
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums text-blue-700">{ppA.toFixed(3)}</td>

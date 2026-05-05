@@ -3,7 +3,7 @@
   import L from 'leaflet';
   import ReportView from './ReportView.svelte';
   import MapPane from './MapPane.svelte';
-  import { metricsFromGeoJsonProperties, buildDeltas } from '../utils/spatialAnalysis';
+  import { metricsFromGeoJsonProperties, buildDeltas, computeThresholds } from '../utils/spatialAnalysis';
   import { computeFairness } from '../utils/fairnessMetrics';
   import {
     computeCompactness,
@@ -192,10 +192,15 @@
     const total = pops.reduce((s, v) => s + v, 0);
     const ideal = total / n;
     const maxDev = Math.max(...pops.map(p => ideal > 0 ? Math.abs(p - ideal) / ideal : 0)) * 100;
-    const mmDistricts = ms.filter(m => m.minorityVapPct > 50).length;
-    const bvapMaj = ms.filter(m => m.vap > 0 && (m.blackVap / m.vap) * 100 > 50).length;
-    const demSeats = ms.filter(m => m.partisanLean > 50).length;
-    return { n, ideal, maxDev, mmDistricts, bvapMaj, demSeats, repSeats: n - demSeats };
+    const thresh = computeThresholds(ms);
+    return {
+      n, ideal, maxDev,
+      mmDistricts: thresh.mvapMaj,
+      bvapMaj: thresh.bvapMaj,
+      demSeats: thresh.demDistricts,
+      repSeats: thresh.repDistricts,
+      competitive: thresh.competitive
+    };
   }
 
   const statsA = $derived(planA ? planStats(planA) : null);
@@ -429,6 +434,19 @@
             <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
               <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Districts</p>
               <p class="text-2xl font-black text-gray-700">{statsA.n}</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Competitive (46.5–53.5%)</p>
+              <div class="flex justify-around">
+                <div class="text-center">
+                  <p class="text-[9px] text-blue-500 font-bold">A</p>
+                  <p class="text-xl font-black text-blue-700">{statsA.competitive}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-[9px] text-amber-500 font-bold">B</p>
+                  <p class="text-xl font-black {statsB.competitive !== statsA.competitive ? 'text-amber-600' : 'text-gray-500'}">{statsB.competitive}</p>
+                </div>
+              </div>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 p-4">
               <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Majority-Minority</p>
