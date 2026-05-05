@@ -12,6 +12,7 @@
   } from '../utils/compactnessMetrics';
   import type { DistrictCompactness } from '../utils/compactnessMetrics';
   import type { DistrictMetrics, DistrictDelta, FairnessMetrics } from '../types';
+  import { getPlanCache, savePlanCache } from '../utils/db';
 
   interface CatalogEntry {
     filename: string;
@@ -43,9 +44,26 @@
   let compactnessB = $state<Map<string, DistrictCompactness> | null>(null);
   let countySplitsA = $state<number | null>(null);
   let countySplitsB = $state<number | null>(null);
+  let bothCached = $state(false); // true when both selected plans have cached results
 
   const geoCache = new Map<string, GeoJSON.FeatureCollection>();
   let openSections = $state(new Set<string>(['congress', 'senate', 'house']));
+
+  // Busy cursor + pointer-lock during report generation
+  $effect(() => {
+    document.body.style.cursor = reportGenerating ? 'wait' : '';
+    return () => { document.body.style.cursor = ''; };
+  });
+
+  // Check IDB cache whenever plan selection changes
+  $effect(() => {
+    const a = planA?.entry.filename;
+    const b = planB?.entry.filename;
+    if (!a || !b) { bothCached = false; return; }
+    Promise.all([getPlanCache(a), getPlanCache(b)])
+      .then(([ca, cb]) => { bothCached = !!(ca && cb); })
+      .catch(() => { bothCached = false; });
+  });
 
   let mapA: L.Map | null = null;
   let mapB: L.Map | null = null;
@@ -149,21 +167,68 @@
     reportGenerating = true;
     loadError = null;
 
-    // Synchronous (may take 1-3s for large plans)
-    compactnessA = computeCompactness(planA.geojson);
-    compactnessB = computeCompactness(planB.geojson);
+    const countyUrl = `${import.meta.env.BASE_URL}data/county.geojson`;
+
+    // Check cache for plan A
+    const cachedA = await getPlanCache(planA.entry.filename);
+    if (cachedA) {
+      compactnessA = new Map(Object.entries(cachedA.compactness));
+      countySplitsA = cachedA.countySplits;
+    } else {
+      // Synchronous compactness (may take 1-3s for large plans)
+      compactnessA = computeCompactness(planA.geojson);
+    }
+
+    // Check cache for plan B
+    const cachedB = await getPlanCache(planB.entry.filename);
+    if (cachedB) {
+      compactnessB = new Map(Object.entries(cachedB.compactness));
+      countySplitsB = cachedB.countySplits;
+    } else {
+      compactnessB = computeCompactness(planB.geojson);
+    }
 
     reportMode = true;
     reportGenerating = false;
 
-    // Async county splits (kicks off in background, updates when ready)
-    const countyUrl = `${import.meta.env.BASE_URL}data/county.geojson`;
-    countySplitsCount(planA.geojson, countyUrl)
-      .then(n => (countySplitsA = n))
-      .catch(() => (countySplitsA = -1));
-    countySplitsCount(planB.geojson, countyUrl)
-      .then(n => (countySplitsB = n))
-      .catch(() => (countySplitsB = -1));
+    // County splits: async, only fetch if not already cached
+    const fetchAndCacheSplits = async (
+      geojson: GeoJSON.FeatureCollection,
+      filename: string,
+      compactness: Map<string, DistrictCompactness>,
+      cached: boolean,
+      setSplits: (n: number) => void
+    ) => {
+      if (cached) return; // already set from cache
+      try {
+        const n = await countySplitsCount(geojson, countyUrl);
+        setSplits(n);
+        await savePlanCache({
+          filename,
+          compactness: Object.fromEntries(compactness),
+          countySplits: n,
+          cachedAt: new Date().toISOString()
+        });
+      } catch {
+        setSplits(-1);
+        // Save compactness without splits so at least that's cached
+        await savePlanCache({
+          filename,
+          compactness: Object.fromEntries(compactness),
+          countySplits: null,
+          cachedAt: new Date().toISOString()
+        }).catch(() => {});
+      }
+    };
+
+    fetchAndCacheSplits(
+      planA.geojson, planA.entry.filename, compactnessA!, !!cachedA,
+      n => (countySplitsA = n)
+    );
+    fetchAndCacheSplits(
+      planB.geojson, planB.entry.filename, compactnessB!, !!cachedB,
+      n => (countySplitsB = n)
+    );
   }
 
   const grouped = $derived({
@@ -255,7 +320,7 @@
                 class="w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors
                   {isA ? 'bg-blue-50 border-l-2 border-blue-500' : isB ? 'bg-amber-50 border-l-2 border-amber-400' : isLocked ? 'border-l-2 border-transparent opacity-35 cursor-not-allowed' : 'border-l-2 border-transparent hover:bg-gray-50 hover:border-gray-200'}"
                 onclick={() => selectPlan(entry)}
-                disabled={isLoading || isLocked}
+                disabled={isLoading || isLocked || reportGenerating}
                 title={isLocked ? `Only ${chamberLabels[planA!.entry.chamber]} plans can be compared` : undefined}
               >
                 <span class="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
@@ -309,7 +374,21 @@
   </aside>
 
   <!-- ─── Main content ─── -->
-  <main class="flex-1 overflow-y-auto bg-gray-50 print:overflow-visible print:h-auto print:w-full">
+  <main class="flex-1 overflow-y-auto bg-gray-50 print:overflow-visible print:h-auto print:w-full relative">
+
+    <!-- Busy overlay: blocks all interaction and shows progress indicator -->
+    {#if reportGenerating}
+      <div class="absolute inset-0 z-50 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-4 cursor-wait">
+        <svg class="animate-spin w-10 h-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <div class="text-center">
+          <p class="text-sm font-semibold text-gray-800">Computing report…</p>
+          <p class="text-xs text-gray-500 mt-0.5">Polsby-Popper, compactness, VRA thresholds</p>
+        </div>
+      </div>
+    {/if}
 
     <!-- Selection header bar -->
     <div class="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 flex-wrap shadow-sm print:hidden">
@@ -519,6 +598,13 @@
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Computing…
+                  </span>
+                {:else if bothCached}
+                  <span class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    Load from Cache →
                   </span>
                 {:else}
                   Generate Report →
