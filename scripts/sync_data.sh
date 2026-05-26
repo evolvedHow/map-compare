@@ -7,6 +7,12 @@
 #   ./scripts/sync_data.sh --dry-run
 
 set -e
+
+if [ -n "$CI" ]; then
+  echo "CI environment — skipping FDP sync (data already in repo)"
+  exit 0
+fi
+
 cd "$(dirname "$0")/.."
 
 DEST="$(pwd)/public/data"
