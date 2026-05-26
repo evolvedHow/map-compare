@@ -23,4 +23,4 @@ echo "FDP root  : $FDP_ROOT"
 echo "Dest      : $DEST"
 echo ""
 
-FDP_ROOT="$FDP_ROOT" python -m fdp.cli sync-app map_compare --dest "$DEST" "$@"
+FDP_ROOT="$FDP_ROOT" uv run --directory "$FDP_ROOT" python -m fdp.cli sync-app map_compare --dest "$DEST" "$@"

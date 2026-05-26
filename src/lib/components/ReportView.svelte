@@ -730,6 +730,22 @@
         fmt="int"
         betterWhen="higher"
       />
+      <ScoreCard
+        label="Safe Seat % (>7% margin)"
+        description="% of districts won by >7 points. FDGA reported 97% safe in 2024 GA legislative elections."
+        a={(threshA.safetyTiers['Safe R'] + threshA.safetyTiers['Lean R'] + threshA.safetyTiers['Lean D'] + threshA.safetyTiers['Safe D']) / Math.max(1, sA.n) * 100}
+        b={(threshB.safetyTiers['Safe R'] + threshB.safetyTiers['Lean R'] + threshB.safetyTiers['Lean D'] + threshB.safetyTiers['Safe D']) / Math.max(1, sB.n) * 100}
+        fmt="pct1"
+        betterWhen="neutral"
+      />
+      <ScoreCard
+        label="Competitive Districts"
+        description="Districts within 7% margin (46.5%–53.5% Dem). FDGA A-grade: 2–6 Senate, 11–20 House."
+        a={threshA.competitive}
+        b={threshB.competitive}
+        fmt="int"
+        betterWhen="neutral"
+      />
     </div>
   </section>
 
