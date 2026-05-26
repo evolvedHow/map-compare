@@ -93,3 +93,12 @@ export interface ValidationResult {
   bounds: [number, number, number, number];
   geometryType: string;
 }
+
+// CDM types — re-exported for convenience
+export type {
+  DisplacementMetrics,
+  DistrictDisplacement,
+  RedistrictingHistory,
+  RedistrictingWave,
+  ChamberWave,
+} from './cdm';

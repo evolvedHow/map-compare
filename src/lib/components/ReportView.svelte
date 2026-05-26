@@ -10,6 +10,8 @@
   import type { NarrativeReport, AnalyzePayload } from '../utils/aiReport';
   import type { DistrictCompactness, SeatVotePoint } from '../utils/compactnessMetrics';
   import type { DistrictMetrics, DistrictDelta, FairnessMetrics } from '../types';
+  import type { DisplacementMetrics } from '../types/cdm';
+  import { fmtPop } from '../utils/displacementMetrics';
 
   interface CatalogEntry {
     filename: string;
@@ -36,6 +38,7 @@
     deltas: DistrictDelta[];
     fairnessA: FairnessMetrics;
     fairnessB: FairnessMetrics;
+    displacement?: DisplacementMetrics | null;
     colorBy: 'partisan' | 'minority_vap' | 'pop';
     onMapReadyA?: (map: L.Map) => void;
     onMapReadyB?: (map: L.Map) => void;
@@ -46,6 +49,7 @@
     planA, planB, compactnessA, compactnessB,
     countySplitsA, countySplitsB,
     deltas, fairnessA, fairnessB,
+    displacement,
     colorBy, onMapReadyA, onMapReadyB, onColorByChange
   }: Props = $props();
 
@@ -628,6 +632,41 @@
         </div>
       </div>
     </div>
+  </section>
+  {/if}
+
+  <!-- ── Score cards: Population Displacement ── -->
+  {#if displacement}
+  <section class="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-4">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <h3 class="text-xs font-bold text-red-700 uppercase tracking-widest">Voter Disruption</h3>
+        <p class="text-[11px] text-red-500 mt-0.5">
+          People moved beyond what was required for population equalization
+          · method: {displacement.method.replace('_', ' ')}
+        </p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div class="bg-white rounded-xl border border-red-200 p-3 text-center">
+        <div class="text-2xl font-bold text-gray-800">{fmtPop(displacement.displacedPop)}</div>
+        <div class="text-xs font-medium text-gray-500 mt-0.5">People Displaced</div>
+        <div class="text-[11px] text-gray-400">{(displacement.displacedPct * 100).toFixed(1)}% of total</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-200 p-3 text-center">
+        <div class="text-2xl font-bold text-gray-500">{fmtPop(displacement.minRequiredDisplacedPop)}</div>
+        <div class="text-xs font-medium text-gray-500 mt-0.5">Min. Required</div>
+        <div class="text-[11px] text-gray-400">{(displacement.minRequiredDisplacedPct * 100).toFixed(1)}% of total</div>
+      </div>
+      <div class="bg-white rounded-xl border border-red-300 p-3 text-center col-span-2 sm:col-span-1">
+        <div class="text-2xl font-bold text-red-600">{fmtPop(displacement.excessDisplacedPop)}</div>
+        <div class="text-xs font-semibold text-red-600 mt-0.5">Excess Displacement</div>
+        <div class="text-[11px] text-red-400">{(displacement.excessDisplacedPct * 100).toFixed(1)}% — beyond what was needed</div>
+      </div>
+    </div>
+    <p class="text-[11px] text-red-400 mt-2 italic">
+      {displacement.districtCount}-district plan · total population {fmtPop(displacement.totalPop)}
+    </p>
   </section>
   {/if}
 

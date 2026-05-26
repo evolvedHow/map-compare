@@ -1,10 +1,12 @@
 <script lang="ts">
   import CompareView from './lib/components/CompareView.svelte';
+  import DamageMap from './lib/components/DamageMap.svelte';
   import { darkMode } from './lib/stores/shapefileStore';
 
   let dark = $state(false);
   let showSettings = $state(false);
   let stateFips = $state('13');
+  let activeTab = $state<'compare' | 'history'>('compare');
 
   darkMode.subscribe(v => (dark = v));
 </script>
@@ -19,6 +21,18 @@
           <p class="text-[11px] text-gray-400 leading-none">Georgia 2020–2024 · Census PL 94-171</p>
         </div>
       </div>
+      <!-- Tab switcher -->
+      <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+        <button
+          onclick={() => (activeTab = 'compare')}
+          class="px-3 py-1 text-xs font-medium rounded-md transition-colors {activeTab === 'compare' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}"
+        >Compare</button>
+        <button
+          onclick={() => (activeTab = 'history')}
+          class="px-3 py-1 text-xs font-medium rounded-md transition-colors {activeTab === 'history' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}"
+        >History</button>
+      </div>
+
       <button
         onclick={() => (showSettings = !showSettings)}
         class="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
@@ -70,6 +84,12 @@
 
   <!-- Main: full height below header -->
   <div class="flex-1 overflow-hidden print:overflow-visible print:h-auto">
-    <CompareView />
+    {#if activeTab === 'compare'}
+      <CompareView />
+    {:else}
+      <div class="h-full overflow-y-auto">
+        <DamageMap />
+      </div>
+    {/if}
   </div>
 </div>

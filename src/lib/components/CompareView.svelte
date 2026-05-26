@@ -12,6 +12,8 @@
   } from '../utils/compactnessMetrics';
   import type { DistrictCompactness } from '../utils/compactnessMetrics';
   import type { DistrictMetrics, DistrictDelta, FairnessMetrics } from '../types';
+  import type { DisplacementMetrics } from '../types/cdm';
+  import { computeDisplacement } from '../utils/displacementMetrics';
   import { getPlanCache, savePlanCache } from '../utils/db';
 
   interface CatalogEntry {
@@ -44,6 +46,7 @@
   let compactnessB = $state<Map<string, DistrictCompactness> | null>(null);
   let countySplitsA = $state<number | null>(null);
   let countySplitsB = $state<number | null>(null);
+  let displacement = $state<DisplacementMetrics | null>(null);
   let bothCached = $state(false); // true when both selected plans have cached results
 
   const geoCache = new Map<string, GeoJSON.FeatureCollection>();
@@ -124,6 +127,7 @@
       reportMode = false;
       compactnessA = null; compactnessB = null;
       countySplitsA = null; countySplitsB = null;
+      displacement = null;
       return;
     }
     if (planB?.entry.filename === entry.filename) {
@@ -131,6 +135,7 @@
       loadError = null;
       reportMode = false;
       compactnessB = null; countySplitsB = null;
+      displacement = null;
       return;
     }
 
@@ -186,6 +191,18 @@
       countySplitsB = cachedB.countySplits;
     } else {
       compactnessB = computeCompactness(planB.geojson);
+    }
+
+    // Displacement metric — runs after compactness so it doesn't block the report render
+    displacement = null;
+    try {
+      const { summary } = computeDisplacement(
+        planA.geojson, planB.geojson,
+        planA.entry.filename, planB.entry.filename,
+      );
+      displacement = summary;
+    } catch {
+      displacement = null;
     }
 
     reportMode = true;
@@ -451,6 +468,7 @@
           {deltas}
           {fairnessA}
           {fairnessB}
+          {displacement}
           {colorBy}
           onMapReadyA={onMapAReady}
           onMapReadyB={onMapBReady}

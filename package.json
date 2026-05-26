@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync": "bash scripts/sync_data.sh",
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run sync && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
