@@ -40,6 +40,7 @@ export function spatialJoin(
         m.blackVap += row.black_vap || 0;
         m.hispanicVap += row.hispanic_vap || 0;
         m.asianVap += row.asian_vap || 0;
+        m.whiteVap += row.white_vap || 0;
         m.demVotes += row.dem_votes || 0;
         m.repVotes += row.rep_votes || 0;
         break;
@@ -52,6 +53,10 @@ export function spatialJoin(
     const totalVap = m.vap || 1;
     const minVap = m.blackVap + m.hispanicVap + m.asianVap;
     m.minorityVapPct = (minVap / totalVap) * 100;
+    // If white_vap wasn't in the crosswalk data, derive it
+    if (m.whiteVap === 0 && m.vap > 0) {
+      m.whiteVap = Math.max(0, m.vap - minVap);
+    }
 
     const totalVotes = m.demVotes + m.repVotes;
     m.partisanLean = totalVotes > 0 ? (m.demVotes / totalVotes) * 100 : 50;
@@ -154,6 +159,7 @@ export function buildDeltas(
       bvapChangeLabel: classifyBvapChange(bvapPctA, bvapPctB),
       mvapChangeLabel: classifyMvapChange(mvapPctA, mvapPctB),
       partisanFlipLabel: classifyPartisanFlip(a.partisanLean, b.partisanLean),
+      competitiveChangeLabel: classifyCompetitiveChange(a.partisanLean, b.partisanLean),
       popDeviation,
       popDeviationPct: idealPop > 0 ? popDeviation / idealPop : 0
     };
@@ -176,15 +182,17 @@ export function metricsFromGeoJsonProperties(
     const tvap = Number(p.tvap ?? p.VAP ?? pop * 0.75);
     const partisan = Number(p.partisan ?? 0.5);
 
-    let blackVap: number, asianVap: number, hispanicVap: number, minorityVapPct: number;
+    let blackVap: number, asianVap: number, hispanicVap: number, whiteVap: number, minorityVapPct: number;
 
     if (p.bvap !== undefined) {
       // Senate/House format: absolute VAP counts
       blackVap = Number(p.bvap ?? 0);
       asianVap = Number(p.avap ?? 0);
       hispanicVap = Number(p.hvap ?? 0);
+      const wvap = Number(p.wvap ?? p.white_vap ?? 0);
       const bipocVap = Number(p.bipoc_vap ?? blackVap + asianVap + hispanicVap);
       minorityVapPct = tvap > 0 ? (bipocVap / tvap) * 100 : 0;
+      whiteVap = wvap > 0 ? wvap : Math.max(0, tvap - bipocVap);
     } else {
       // Congress format: ratio values
       const pctBlack = Number(p.pct_bvap_al ?? 0);
@@ -194,6 +202,7 @@ export function metricsFromGeoJsonProperties(
       blackVap = pctBlack * tvap;
       asianVap = pctAsian * tvap;
       hispanicVap = pctHispanic * tvap;
+      whiteVap = pctWhite * tvap;
       minorityVapPct = (1 - pctWhite) * 100;
     }
 
@@ -204,6 +213,7 @@ export function metricsFromGeoJsonProperties(
       blackVap,
       hispanicVap,
       asianVap,
+      whiteVap,
       minorityVapPct,
       demVotes: partisan * 1000,
       repVotes: (1 - partisan) * 1000,
@@ -250,6 +260,15 @@ export function classifyMvapChange(mvapPctA: number, mvapPctB: number): string {
 export function classifyPartisanFlip(leanA: number, leanB: number): string {
   if (leanA >= 50 && leanB < 50) return 'Lost Dem';
   if (leanA < 50  && leanB >= 50) return 'Gained Dem';
+  return '';
+}
+
+// lean is 0–100 Dem percentage; competitive = 46.5%–53.5%
+export function classifyCompetitiveChange(leanA: number, leanB: number): string {
+  const compA = leanA >= 46.5 && leanA <= 53.5;
+  const compB = leanB >= 46.5 && leanB <= 53.5;
+  if (!compA && compB) return 'Gained Competitive';
+  if (compA && !compB) return 'Lost Competitive';
   return '';
 }
 
@@ -313,6 +332,7 @@ function zeroMetrics(id: string): DistrictMetrics {
     blackVap: 0,
     hispanicVap: 0,
     asianVap: 0,
+    whiteVap: 0,
     minorityVapPct: 0,
     demVotes: 0,
     repVotes: 0,

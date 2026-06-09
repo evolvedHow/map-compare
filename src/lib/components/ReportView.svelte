@@ -2,15 +2,16 @@
   import ScoreCard from './ScoreCard.svelte';
   import MapPane from './MapPane.svelte';
   import SvgMap from './SvgMap.svelte';
+  import ScoringRubric from './ScoringRubric.svelte';
   import L from 'leaflet';
   import { avgScore, seatVotesCurve, partisanBias } from '../utils/compactnessMetrics';
   import { computeThresholds } from '../utils/spatialAnalysis';
-  import type { DistrictThresholds } from '../types';
+  import type { DistrictThresholds, ColorByMode } from '../types';
   import { generateNarrative } from '../utils/aiReport';
   import type { NarrativeReport, AnalyzePayload } from '../utils/aiReport';
   import type { DistrictCompactness, SeatVotePoint } from '../utils/compactnessMetrics';
   import type { DistrictMetrics, DistrictDelta, FairnessMetrics } from '../types';
-  import type { DisplacementMetrics } from '../types/cdm';
+  import type { DisplacementMetrics, DistrictDisplacement } from '../types/cdm';
   import { fmtPop } from '../utils/displacementMetrics';
 
   interface CatalogEntry {
@@ -39,6 +40,7 @@
     fairnessA: FairnessMetrics;
     fairnessB: FairnessMetrics;
     displacement?: DisplacementMetrics | null;
+    displacementDistricts?: DistrictDisplacement[];
     colorBy: 'partisan' | 'minority_vap' | 'pop';
     onMapReadyA?: (map: L.Map) => void;
     onMapReadyB?: (map: L.Map) => void;
@@ -49,9 +51,26 @@
     planA, planB, compactnessA, compactnessB,
     countySplitsA, countySplitsB,
     deltas, fairnessA, fairnessB,
-    displacement,
+    displacement, displacementDistricts = [],
     colorBy, onMapReadyA, onMapReadyB, onColorByChange
   }: Props = $props();
+
+  // Local color override for delta-based map layers (not propagated to CompareView)
+  let deltaColorBy = $state<'flip' | 'competitive_change' | 'minority_change' | null>(null);
+  const effectiveColorBy = $derived<ColorByMode>(deltaColorBy ?? colorBy);
+
+  // Delta lookup maps — Plan A by districtId, Plan B by matchedBId
+  const deltaMapA = $derived(new Map(deltas.map(d => [d.districtId, d])));
+  const deltaMapB = $derived(new Map(deltas.map(d => [d.matchedBId, d])));
+
+  // ── Rollup counts ────────────────────────────────────────────────────────
+
+  const nFlips        = $derived(deltas.filter(d => d.partisanFlipLabel !== '').length);
+  const nCompChange   = $derived(deltas.filter(d => d.competitiveChangeLabel !== '').length);
+  const nVraChange    = $derived(deltas.filter(d => d.bvapChangeLabel !== '' || d.mvapChangeLabel !== '').length);
+  const nSigChange    = $derived(deltas.filter(d =>
+    Math.abs(d.deltaPartisanLean) > 5 || Math.abs(d.deltaMinorityVapPct) > 5
+  ).length);
 
   // ── Derived summary stats ────────────────────────────────────────────────
 
@@ -71,6 +90,20 @@
 
   const sA = $derived(planStats(planA));
   const sB = $derived(planStats(planB));
+
+  function rubricSummary(p: LoadedPlan, s: ReturnType<typeof planStats>, thresh: DistrictThresholds) {
+    return {
+      name: p.entry.name,
+      year: p.entry.year,
+      n: s.n,
+      maxDev: s.maxDev,
+      demSeats: s.demSeats,
+      repSeats: s.repSeats,
+      bvapMaj: s.bvapMaj,
+      mmDistricts: s.mmDistricts,
+      competitive: thresh.competitive,
+    };
+  }
   const threshA = $derived(computeThresholds([...planA.metrics.values()]));
   const threshB = $derived(computeThresholds([...planB.metrics.values()]));
   const avgPPA = $derived(avgScore(compactnessA, 'polsbyPopper'));
@@ -386,6 +419,40 @@
     </div>
   </div>
 
+  <!-- ── Change Rollup Banner ── -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">What Changed (A → B)</p>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="text-center">
+        <div class="text-2xl font-black {nSigChange > 0 ? 'text-gray-800' : 'text-gray-300'}">{nSigChange}</div>
+        <div class="text-xs font-medium text-gray-600 mt-0.5">Significantly Changed</div>
+        <div class="text-[10px] text-gray-400">&gt;5pp partisan or VRA shift</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black {nFlips > 0 ? 'text-purple-700' : 'text-gray-300'}">{nFlips}</div>
+        <div class="text-xs font-medium text-gray-600 mt-0.5">Partisan Flips</div>
+        <div class="text-[10px] text-gray-400">
+          {#if nFlips > 0}
+            {deltas.filter(d => d.partisanFlipLabel === 'Gained Dem').length} Gained Dem ·
+            {deltas.filter(d => d.partisanFlipLabel === 'Lost Dem').length} Lost Dem
+          {:else}
+            No D↔R crossings
+          {/if}
+        </div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black {nCompChange > 0 ? 'text-amber-600' : 'text-gray-300'}">{nCompChange}</div>
+        <div class="text-xs font-medium text-gray-600 mt-0.5">Competitive Seats Changed</div>
+        <div class="text-[10px] text-gray-400">46.5%–53.5% Dem threshold</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black {nVraChange > 0 ? 'text-emerald-700' : 'text-gray-300'}">{nVraChange}</div>
+        <div class="text-xs font-medium text-gray-600 mt-0.5">VRA Demographic Shifts</div>
+        <div class="text-[10px] text-gray-400">BVAP or MVAP threshold crossed</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── AI Narrative ── -->
   <section class="bg-gradient-to-br from-indigo-50 to-white rounded-2xl border border-indigo-200 shadow-sm overflow-hidden">
     <div class="px-5 py-3 border-b border-indigo-100 bg-indigo-50/50 flex items-center justify-between gap-4 flex-wrap">
@@ -472,14 +539,25 @@
 
   <!-- ── Maps ── -->
   <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
-    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50">
+    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50 flex-wrap gap-2">
       <span class="text-xs font-semibold text-gray-500">District Maps</span>
-      <div class="flex gap-1">
-        {#each [['partisan','Partisan'], ['minority_vap','Minority VAP'], ['pop','Population']] as [val, lbl]}
+      <div class="flex gap-1 flex-wrap">
+        {#each ([['partisan','Partisan'], ['minority_vap','Minority VAP'], ['pop','Population']] as const) as [val, lbl]}
           <button
-            onclick={() => onColorByChange?.(val as 'partisan' | 'minority_vap' | 'pop')}
+            onclick={() => { deltaColorBy = null; onColorByChange?.(val); }}
             class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors
-              {colorBy === val ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100 border border-gray-200'}"
+              {effectiveColorBy === val ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100 border border-gray-200'}"
+          >
+            {lbl}
+          </button>
+        {/each}
+        <span class="w-px bg-gray-200 mx-0.5 self-stretch shrink-0"></span>
+        {#each ([['flip','Flipped'], ['competitive_change','Comp. Change'], ['minority_change','Minority Change']] as const) as [val, lbl]}
+          <button
+            onclick={() => { deltaColorBy = deltaColorBy === val ? null : val; }}
+            class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors
+              {effectiveColorBy === val ? 'bg-violet-600 text-white' : 'text-gray-500 hover:bg-gray-100 border border-gray-200'}"
+            title="Color districts by change classification"
           >
             {lbl}
           </button>
@@ -492,7 +570,8 @@
         <MapPane
           geojson={planA.geojson}
           metrics={planA.metrics}
-          {colorBy}
+          colorBy={effectiveColorBy}
+          deltaMap={deltaMapA}
           label={planA.entry.name}
           onMapReady={onMapReadyA}
           onHover={(id) => (hoveredA = id)}
@@ -503,7 +582,8 @@
         <MapPane
           geojson={planB.geojson}
           metrics={planB.metrics}
-          {colorBy}
+          colorBy={effectiveColorBy}
+          deltaMap={deltaMapB}
           label={planB.entry.name}
           onMapReady={onMapReadyB}
           onHover={(id) => (hoveredB = id)}
@@ -553,16 +633,28 @@
     </div>
 
     <!-- Legend -->
-    <div class="px-5 py-2 border-t border-gray-100 flex items-center gap-5 text-[11px] text-gray-500 bg-gray-50">
-      {#if colorBy === 'partisan'}
+    <div class="px-5 py-2 border-t border-gray-100 flex items-center gap-5 text-[11px] text-gray-500 bg-gray-50 flex-wrap">
+      {#if effectiveColorBy === 'partisan'}
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#1a4fa0] shrink-0"></span>D+15+</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#93b8e8] shrink-0"></span>Lean Dem</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#e8a097] shrink-0"></span>Lean Rep</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#a01a1a] shrink-0"></span>R+15+</span>
-      {:else if colorBy === 'minority_vap'}
+      {:else if effectiveColorBy === 'minority_vap'}
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f5f3ff] border border-gray-200 shrink-0"></span>&lt;15%</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#a78bfa] shrink-0"></span>30–45%</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#5c2d91] shrink-0"></span>&gt;60%</span>
+      {:else if effectiveColorBy === 'flip'}
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#2563eb] shrink-0"></span>Gained Dem</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#dc2626] shrink-0"></span>Lost Dem</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d1d5db] shrink-0"></span>Unchanged</span>
+      {:else if effectiveColorBy === 'competitive_change'}
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#16a34a] shrink-0"></span>Gained Competitive</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f97316] shrink-0"></span>Lost Competitive</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d1d5db] shrink-0"></span>Unchanged</span>
+      {:else if effectiveColorBy === 'minority_change'}
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#7c3aed] shrink-0"></span>Gained BVAP/MVAP</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d97706] shrink-0"></span>Lost BVAP/MVAP</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d1d5db] shrink-0"></span>Unchanged</span>
       {:else}
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f0fdf4] border border-gray-200 shrink-0"></span>Lower</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#14532d] shrink-0"></span>Higher</span>
@@ -667,6 +759,46 @@
     <p class="text-[11px] text-red-400 mt-2 italic">
       {displacement.districtCount}-district plan · total population {fmtPop(displacement.totalPop)}
     </p>
+
+    <!-- Population displacement matrix (sparse: only cross-district movements) -->
+    {#if displacementDistricts.length > 0}
+      {@const movers = displacementDistricts
+        .filter(d => d.districtIdA !== d.districtIdB && d.displacedFromA > 0)
+        .sort((a, b) => b.displacedFromA - a.displacedFromA)}
+      {#if movers.length > 0}
+        <div class="mt-3">
+          <p class="text-xs font-semibold text-red-700 mb-2">Cross-District Population Movement</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse bg-white rounded-xl overflow-hidden">
+              <thead>
+                <tr class="border-b border-red-200 bg-red-50">
+                  <th class="px-3 py-1.5 text-left text-red-600 font-semibold">From (Plan A)</th>
+                  <th class="px-3 py-1.5 text-left text-red-600 font-semibold">Dominant Match (Plan B)</th>
+                  <th class="px-3 py-1.5 text-right text-red-600 font-semibold">People Displaced</th>
+                  <th class="px-3 py-1.5 text-right text-red-600 font-semibold">% of District</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-red-100">
+                {#each movers as m}
+                  <tr class="hover:bg-red-50">
+                    <td class="px-3 py-1.5 font-semibold text-gray-800">D{m.districtIdA}</td>
+                    <td class="px-3 py-1.5 text-gray-600">D{m.districtIdB}</td>
+                    <td class="px-3 py-1.5 text-right font-mono tabular-nums">{fmtPop(m.displacedFromA)}</td>
+                    <td class="px-3 py-1.5 text-right font-mono tabular-nums {m.displacedPct > 0.3 ? 'text-red-600 font-bold' : 'text-gray-600'}">
+                      {(m.displacedPct * 100).toFixed(1)}%
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+          <p class="text-[10px] text-red-400 mt-1.5 italic">
+            Dominant-match method: each Plan A district is matched to the Plan B district with the largest geographic overlap.
+            Districts not shown here were matched to their same-numbered counterpart.
+          </p>
+        </div>
+      {/if}
+    {/if}
   </section>
   {/if}
 
@@ -1176,6 +1308,21 @@
       {/each}
     </div>
   </section>
+
+  <!-- ── Scoring Rubric ── -->
+  <ScoringRubric
+    planA={rubricSummary(planA, sA, threshA)}
+    planB={rubricSummary(planB, sB, threshB)}
+    {fairnessA}
+    {fairnessB}
+    {threshA}
+    {threshB}
+    {compactnessA}
+    {compactnessB}
+    {countySplitsA}
+    {countySplitsB}
+    {deltas}
+  />
 
   <!-- ── Methodology ── -->
   <section class="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-xs text-gray-500 leading-relaxed">

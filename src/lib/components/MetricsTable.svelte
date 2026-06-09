@@ -11,7 +11,7 @@
 
   let { deltas, fairnessA, fairnessB, labelA, labelB }: Props = $props();
 
-  type SortKey = keyof DistrictDelta | 'totalPop_a' | 'vap_a' | 'minority_a' | 'lean_a' | 'totalPop_b' | 'vap_b' | 'minority_b' | 'lean_b';
+  type SortKey = keyof DistrictDelta | 'totalPop_a' | 'vap_a' | 'minority_a' | 'lean_a' | 'totalPop_b' | 'vap_b' | 'minority_b' | 'lean_b' | 'white_a' | 'white_b';
   let sortKey = $state<string>('districtId');
   let sortDir = $state<1 | -1>(1);
 
@@ -32,6 +32,8 @@
       case 'minority_a': return d.a.minorityVapPct;
       case 'minority_b': return d.b.minorityVapPct;
       case 'deltaMinorityVapPct': return d.deltaMinorityVapPct;
+      case 'white_a': return d.a.vap > 0 ? (d.a.whiteVap / d.a.vap) * 100 : 0;
+      case 'white_b': return d.b.vap > 0 ? (d.b.whiteVap / d.b.vap) * 100 : 0;
       case 'lean_a': return d.a.partisanLean;
       case 'lean_b': return d.b.partisanLean;
       case 'deltaPartisanLean': return d.deltaPartisanLean;
@@ -80,14 +82,20 @@
       'District', `Pop (${labelA})`, `Pop (${labelB})`, 'ΔPop',
       `VAP (${labelA})`, `VAP (${labelB})`, 'ΔVAP',
       `Minority VAP% (${labelA})`, `Minority VAP% (${labelB})`, 'ΔMinority VAP%',
+      `White VAP% (${labelA})`, `White VAP% (${labelB})`, 'ΔWhite VAP%',
       `Partisan Lean (${labelA})`, `Partisan Lean (${labelB})`, 'ΔPartisan'
     ];
-    const rows = sorted.map(d => [
-      d.districtId, d.a.totalPop, d.b.totalPop, d.deltaPop,
-      d.a.vap, d.b.vap, d.deltaVap,
-      d.a.minorityVapPct.toFixed(2), d.b.minorityVapPct.toFixed(2), d.deltaMinorityVapPct.toFixed(2),
-      d.a.partisanLean.toFixed(2), d.b.partisanLean.toFixed(2), d.deltaPartisanLean.toFixed(2)
-    ]);
+    const rows = sorted.map(d => {
+      const wA = d.a.vap > 0 ? (d.a.whiteVap / d.a.vap) * 100 : 0;
+      const wB = d.b.vap > 0 ? (d.b.whiteVap / d.b.vap) * 100 : 0;
+      return [
+        d.districtId, d.a.totalPop, d.b.totalPop, d.deltaPop,
+        d.a.vap, d.b.vap, d.deltaVap,
+        d.a.minorityVapPct.toFixed(2), d.b.minorityVapPct.toFixed(2), d.deltaMinorityVapPct.toFixed(2),
+        wA.toFixed(2), wB.toFixed(2), (wB - wA).toFixed(2),
+        d.a.partisanLean.toFixed(2), d.b.partisanLean.toFixed(2), d.deltaPartisanLean.toFixed(2)
+      ];
+    });
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -110,6 +118,8 @@
     { key: 'minority_a', label: 'Min VAP% (A)' },
     { key: 'minority_b', label: 'Min VAP% (B)' },
     { key: 'deltaMinorityVapPct', label: 'ΔMin VAP%' },
+    { key: 'white_a', label: 'Wh VAP% (A)' },
+    { key: 'white_b', label: 'Wh VAP% (B)' },
     { key: 'lean_a', label: 'Lean (A)' },
     { key: 'lean_b', label: 'Lean (B)' },
     { key: 'deltaPartisanLean', label: 'ΔLean' }
@@ -179,6 +189,8 @@
       </thead>
       <tbody>
         {#each sorted as d (d.districtId)}
+          {@const wvapPctA = d.a.vap > 0 ? (d.a.whiteVap / d.a.vap) * 100 : 0}
+          {@const wvapPctB = d.b.vap > 0 ? (d.b.whiteVap / d.b.vap) * 100 : 0}
           <tr class="border-b border-gray-100 hover:bg-gray-50 {d.minorityFlagged ? 'bg-amber-50 hover:bg-amber-100' : ''}">
             <td class="px-3 py-2 font-medium">{d.districtId}</td>
             <td class="px-3 py-2 text-right">{fmtNum(d.a.totalPop)}</td>
@@ -192,6 +204,8 @@
             <td class="px-3 py-2 text-right font-medium {d.minorityFlagged ? 'text-amber-700' : deltaClass(d.deltaMinorityVapPct)}">
               {fmtDelta(d.deltaMinorityVapPct, true)}
             </td>
+            <td class="px-3 py-2 text-right text-gray-500">{fmtPct(wvapPctA)}</td>
+            <td class="px-3 py-2 text-right {deltaClass(wvapPctB - wvapPctA)}">{fmtPct(wvapPctB)}</td>
             <td class="px-3 py-2 text-right">{fmtPct(d.a.partisanLean)}</td>
             <td class="px-3 py-2 text-right">{fmtPct(d.b.partisanLean)}</td>
             <td class="px-3 py-2 text-right {deltaClass(d.deltaPartisanLean)}">{fmtDelta(d.deltaPartisanLean, true)}</td>

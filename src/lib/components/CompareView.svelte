@@ -12,7 +12,7 @@
   } from '../utils/compactnessMetrics';
   import type { DistrictCompactness } from '../utils/compactnessMetrics';
   import type { DistrictMetrics, DistrictDelta, FairnessMetrics } from '../types';
-  import type { DisplacementMetrics } from '../types/cdm';
+  import type { DisplacementMetrics, DistrictDisplacement } from '../types/cdm';
   import { computeDisplacement } from '../utils/displacementMetrics';
   import { getPlanCache, savePlanCache } from '../utils/db';
 
@@ -47,6 +47,7 @@
   let countySplitsA = $state<number | null>(null);
   let countySplitsB = $state<number | null>(null);
   let displacement = $state<DisplacementMetrics | null>(null);
+  let displacementDistricts = $state<DistrictDisplacement[]>([]);
   let bothCached = $state(false); // true when both selected plans have cached results
 
   const geoCache = new Map<string, GeoJSON.FeatureCollection>();
@@ -127,7 +128,7 @@
       reportMode = false;
       compactnessA = null; compactnessB = null;
       countySplitsA = null; countySplitsB = null;
-      displacement = null;
+      displacement = null; displacementDistricts = [];
       return;
     }
     if (planB?.entry.filename === entry.filename) {
@@ -135,7 +136,7 @@
       loadError = null;
       reportMode = false;
       compactnessB = null; countySplitsB = null;
-      displacement = null;
+      displacement = null; displacementDistricts = [];
       return;
     }
 
@@ -195,14 +196,17 @@
 
     // Displacement metric — runs after compactness so it doesn't block the report render
     displacement = null;
+    displacementDistricts = [];
     try {
-      const { summary } = computeDisplacement(
+      const { summary, districts } = computeDisplacement(
         planA.geojson, planB.geojson,
         planA.entry.filename, planB.entry.filename,
       );
       displacement = summary;
+      displacementDistricts = districts;
     } catch {
       displacement = null;
+      displacementDistricts = [];
     }
 
     reportMode = true;
@@ -469,6 +473,7 @@
           {fairnessA}
           {fairnessB}
           {displacement}
+          {displacementDistricts}
           {colorBy}
           onMapReadyA={onMapAReady}
           onMapReadyB={onMapBReady}

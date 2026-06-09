@@ -2,13 +2,14 @@
   import { onMount, onDestroy, untrack } from 'svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
-  import type { DistrictMetrics } from '../types';
+  import type { DistrictMetrics, DistrictDelta, ColorByMode } from '../types';
 
   interface Props {
     geojson: GeoJSON.FeatureCollection | null;
     metrics: Map<string, DistrictMetrics> | null;
-    colorBy: 'pop' | 'minority_vap' | 'partisan';
+    colorBy: ColorByMode;
     label: string;
+    deltaMap?: Map<string, DistrictDelta>;   // for flip/competitive_change/minority_change modes
     onMapReady?: (map: L.Map) => void;
     onHover?: (id: string | null) => void;
     highlightedId?: string | null;
@@ -16,7 +17,7 @@
 
   let {
     geojson, metrics, colorBy, label,
-    onMapReady, onHover, highlightedId = null
+    deltaMap, onMapReady, onHover, highlightedId = null
   }: Props = $props();
 
   let mapEl: HTMLDivElement;
@@ -69,12 +70,40 @@
     return '#f0fdf4';
   }
 
-  function buildTooltip(id: string, m: DistrictMetrics | undefined): string {
+  function getDeltaColor(delta: DistrictDelta | undefined, mode: string): string {
+    if (!delta) return '#e5e7eb'; // gray = no data
+    if (mode === 'flip') {
+      if (delta.partisanFlipLabel === 'Gained Dem') return '#2563eb'; // blue
+      if (delta.partisanFlipLabel === 'Lost Dem')   return '#dc2626'; // red
+      return '#d1d5db'; // unchanged gray
+    }
+    if (mode === 'competitive_change') {
+      if (delta.competitiveChangeLabel === 'Gained Competitive') return '#16a34a'; // green
+      if (delta.competitiveChangeLabel === 'Lost Competitive')   return '#f97316'; // orange
+      return '#d1d5db';
+    }
+    if (mode === 'minority_change') {
+      const hasGain = delta.bvapChangeLabel.includes('Gained') || delta.mvapChangeLabel.includes('Gained');
+      const hasLoss = delta.bvapChangeLabel.includes('Lost')   || delta.mvapChangeLabel.includes('Lost');
+      if (hasGain) return '#7c3aed'; // purple
+      if (hasLoss) return '#d97706'; // amber
+      return '#d1d5db';
+    }
+    return '#e5e7eb';
+  }
+
+  function buildTooltip(id: string, m: DistrictMetrics | undefined, delta?: DistrictDelta): string {
     if (!m) return `<strong>District ${id}</strong><br><em>No data</em>`;
     const bvapPct = m.vap > 0 ? (m.blackVap / m.vap) * 100 : 0;
     const sign = m.partisanLean >= 50 ? 'D' : 'R';
     const margin = Math.abs(m.partisanLean - 50).toFixed(1);
-    return `<strong>District ${id}</strong><br>Pop: ${m.totalPop.toLocaleString()}<br>VAP: ${m.vap.toLocaleString()}<br>Black VAP: ${bvapPct.toFixed(1)}%<br>Minority VAP: ${m.minorityVapPct.toFixed(1)}%<br>Partisan: ${sign}+${margin}%`;
+    let base = `<strong>District ${id}</strong><br>Pop: ${m.totalPop.toLocaleString()}<br>VAP: ${m.vap.toLocaleString()}<br>Black VAP: ${bvapPct.toFixed(1)}%<br>Minority VAP: ${m.minorityVapPct.toFixed(1)}%<br>Partisan: ${sign}+${margin}%`;
+    if (delta) {
+      const labels = [delta.partisanFlipLabel, delta.competitiveChangeLabel, delta.bvapChangeLabel, delta.mvapChangeLabel]
+        .filter(l => l !== '').join(', ');
+      if (labels) base += `<br><em>${labels}</em>`;
+    }
+    return base;
   }
 
   $effect(() => {
@@ -88,10 +117,16 @@
     }
     layerById.clear();
 
+    const isDeltaMode = colorBy === 'flip' || colorBy === 'competitive_change' || colorBy === 'minority_change';
+
     const newLayer = L.geoJSON(geojson as GeoJSON.GeoJsonObject, {
       style: feature => {
         if (!feature) return {};
         const id = featureId(feature);
+        if (isDeltaMode) {
+          const delta = deltaMap?.get(id);
+          return { fillColor: getDeltaColor(delta, colorBy), fillOpacity: 0.8, color: '#fff', weight: 1.5 };
+        }
         const m = metrics?.get(id);
         const value =
           colorBy === 'pop'          ? (m?.totalPop ?? 0)
@@ -103,7 +138,8 @@
         const id = featureId(feature);
         const m = metrics?.get(id);
         layerById.set(id, layer as L.Path);
-        (layer as L.Path).bindTooltip(buildTooltip(id, m), {
+        const delta = isDeltaMode ? deltaMap?.get(id) : undefined;
+        (layer as L.Path).bindTooltip(buildTooltip(id, m, delta), {
           direction: 'center',
           sticky: false,
           permanent: false,

@@ -26,6 +26,7 @@ export interface CrosswalkRow {
   black_vap: number;
   hispanic_vap: number;
   asian_vap: number;
+  white_vap: number;
   dem_votes: number;
   rep_votes: number;
   lat: number;
@@ -39,11 +40,20 @@ export interface DistrictMetrics {
   blackVap: number;
   hispanicVap: number;
   asianVap: number;
+  whiteVap: number;
   minorityVapPct: number;
   demVotes: number;
   repVotes: number;
   partisanLean: number; // Dem share 0–100
 }
+
+export type ColorByMode =
+  | 'partisan'
+  | 'minority_vap'
+  | 'pop'
+  | 'flip'
+  | 'competitive_change'
+  | 'minority_change';
 
 export interface DistrictDelta {
   districtId: string;        // Plan A district ID (display key)
@@ -57,11 +67,12 @@ export interface DistrictDelta {
   deltaPartisanLean: number;
   minorityFlagged: boolean;  // |deltaMinorityVapPct| > 5
   // R script 7 equivalents
-  bvapChangeLabel: string;   // 'Gained/Lost BVAP Majority/Influence' or ''
-  mvapChangeLabel: string;   // 'Gained/Lost MVAP Majority/Influence' or ''
-  partisanFlipLabel: string; // 'Gained Dem' | 'Lost Dem' | ''
-  popDeviation: number;      // b.totalPop - idealPop (plan B ideal)
-  popDeviationPct: number;   // popDeviation / idealPop
+  bvapChangeLabel: string;       // 'Gained/Lost BVAP Majority/Influence' or ''
+  mvapChangeLabel: string;       // 'Gained/Lost MVAP Majority/Influence' or ''
+  partisanFlipLabel: string;     // 'Gained Dem' | 'Lost Dem' | ''
+  competitiveChangeLabel: string; // 'Gained Competitive' | 'Lost Competitive' | ''
+  popDeviation: number;          // b.totalPop - idealPop (plan B ideal)
+  popDeviationPct: number;       // popDeviation / idealPop
 }
 
 // R script 4 / script 8 equivalents: district counts by VRA and partisan thresholds
