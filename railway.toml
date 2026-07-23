@@ -1,0 +1,26 @@
+# map-compare AI Analysis Backend — Railway deployment config
+#
+# Service setup in Railway dashboard:
+#   1. New service → "Deploy from GitHub repo"
+#   2. Root directory: map-compare
+#   3. Railway auto-detects this railway.toml
+#
+# Required environment variables:
+#   AI_PROVIDER   groq | anthropic | openai | google   (default: groq)
+#   AI_API_KEY    API key for the chosen provider
+#
+# After deploy:
+#   - Copy the Railway service URL
+#   - Set VITE_ANALYZE_API_URL=https://<service>.up.railway.app in your Vite build env
+#   - Rebuild the frontend and redeploy to GitHub Pages
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

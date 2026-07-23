@@ -152,10 +152,20 @@ function parseJsonSafe(text: string): Record<string, unknown> {
   throw new Error('Could not parse JSON from AI response');
 }
 
-export default defineConfig({
-  base: '/map-compare/',
-  plugins: [tailwindcss(), svelte(), aiAnalyzePlugin()],
-  optimizeDeps: {
-    include: ['leaflet', 'shpjs']
-  }
+export default defineConfig(({ mode }) => {
+  // In dev, if VITE_ANALYZE_API_URL is set, proxy to the local FastAPI backend.
+  // If not set, the built-in Vite middleware (aiAnalyzePlugin) handles the call.
+  const backendUrl = process.env.VITE_ANALYZE_API_URL;
+  const proxyConfig = backendUrl
+    ? { '/api/analyze': { target: backendUrl, changeOrigin: true } }
+    : undefined;
+
+  return {
+    base: '/map-compare/',
+    plugins: [tailwindcss(), svelte(), aiAnalyzePlugin()],
+    optimizeDeps: {
+      include: ['leaflet', 'shpjs'],
+    },
+    server: proxyConfig ? { proxy: proxyConfig } : undefined,
+  };
 });

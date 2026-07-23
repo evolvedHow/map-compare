@@ -25,8 +25,21 @@ export interface AnalyzePayload {
   significantlyChanged: number;
 }
 
+/**
+ * Base URL for the AI analysis API.
+ *
+ * In development:  Vite dev-server middleware handles /api/analyze directly,
+ *                  so API_BASE defaults to '' (same origin).
+ *
+ * In production:   Set VITE_ANALYZE_API_URL to the Railway backend URL at
+ *                  build time, e.g. https://map-compare-api.up.railway.app
+ *                  The frontend is static (GitHub Pages) so the backend must
+ *                  allow CORS from the Pages origin.
+ */
+const API_BASE: string = import.meta.env.VITE_ANALYZE_API_URL ?? '';
+
 export async function generateNarrative(payload: AnalyzePayload): Promise<NarrativeReport> {
-  const resp = await fetch('/api/analyze', {
+  const resp = await fetch(`${API_BASE}/api/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
