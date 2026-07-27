@@ -31,10 +31,12 @@ export interface AnalyzePayload {
  * In development:  Vite dev-server middleware handles /api/analyze directly,
  *                  so API_BASE defaults to '' (same origin).
  *
- * In production:   Set VITE_ANALYZE_API_URL to the Railway backend URL at
- *                  build time, e.g. https://map-compare-api.up.railway.app
- *                  The frontend is static (GitHub Pages) so the backend must
- *                  allow CORS from the Pages origin.
+ * In production:   VITE_ANALYZE_API_URL points at the Cloudflare Worker
+ *                  (see wrangler.toml), set in the committed .env.production
+ *                  at build time, e.g. https://map-compare-ai.<sub>.workers.dev
+ *                  The frontend is static (GitHub Pages), so the key cannot
+ *                  live here — the Worker holds it and allows CORS from the
+ *                  Pages origin.
  */
 const API_BASE: string = import.meta.env.VITE_ANALYZE_API_URL ?? '';
 

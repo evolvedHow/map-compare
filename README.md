@@ -99,13 +99,41 @@ cd ~/codebox/map-compare
 npm install
 ```
 
-Create `.env`:
+Create `.env` for **local development only** — it is gitignored, and this
+repository is public:
 
 ```env
-AI_PROVIDER=groq                    # groq | anthropic | openai | google
+AI_PROVIDER=groq                    # groq | anthropic | openai | openrouter | google
 AI_API_KEY=gsk_...                  # API key for the chosen provider
 AI_MODEL=llama-3.3-70b-versatile    # optional; defaults to provider's recommended model
 ```
+
+### Where the AI key lives
+
+The site is static, so it cannot hold a secret — anything in the bundle is
+readable by every visitor. A small Cloudflare Worker holds the key instead and
+makes the provider call on the visitor's behalf. Visitors configure nothing.
+
+| environment | key location |
+|---|---|
+| local dev (`npm run dev`) | `.env` — read by the Vite middleware, never sent to the browser |
+| deployed | Cloudflare Worker secret (`npm run worker:secret`) |
+| GitHub Pages build | no key — only `VITE_ANALYZE_API_URL` in `.env.production`, a public URL |
+
+One-time Worker setup:
+
+```bash
+npx wrangler login
+npm run worker:secret     # prompts for AI_API_KEY, stored by Cloudflare
+npm run worker:deploy     # prints the Worker URL
+```
+
+Then put that URL in `.env.production` as `VITE_ANALYZE_API_URL` (no trailing
+slash) and rebuild. Non-secret Worker settings — provider, allowed origins —
+live in `wrangler.toml`.
+
+`npm run worker:dev` runs the Worker locally in Cloudflare's runtime and picks
+up `.env` automatically.
 
 ---
 
@@ -135,8 +163,9 @@ npm run build
 # build:    vite build → dist/
 ```
 
-Output is a self-contained static site in `dist/`.  AI narrative calls go
-directly from the browser to the LLM provider, so no API proxy is needed.
+Output is a self-contained static site in `dist/`.  AI narrative calls go to
+the Cloudflare Worker named in `VITE_ANALYZE_API_URL`, which holds the provider
+key; the key is never part of the bundle.
 
 ---
 

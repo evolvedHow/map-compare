@@ -7,7 +7,10 @@
     "sync": "bash scripts/sync_data.sh",
     "dev": "vite",
     "build": "npm run sync && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy",
+    "worker:secret": "wrangler secret put AI_API_KEY"
   },
   "dependencies": {
     "@turf/turf": "^7",
@@ -25,6 +28,7 @@
     "@types/papaparse": "^5",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vite": "^6"
+    "vite": "^6",
+    "wrangler": "^4.114.0"
   }
 }

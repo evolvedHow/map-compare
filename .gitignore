@@ -8,3 +8,10 @@ dist/
 # Committed on purpose: build-time config for the Pages deploy. Holds only the
 # public backend URL — never a key. See the warning at the top of the file.
 !.env.production
+
+# Wrangler local state (Cloudflare Worker dev)
+.wrangler/
+
+# Editor swap files
+*.swp
+*.swo

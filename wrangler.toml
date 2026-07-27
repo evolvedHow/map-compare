@@ -1,0 +1,32 @@
+# map-compare AI analysis Worker
+#
+# Holds the AI provider key so the static GitHub Pages site doesn't have to.
+# Replaces the previous Railway container — same job, no Dockerfile, and the
+# free tier covers far more traffic than this app will see.
+#
+# One-time setup:
+#   npx wrangler login
+#   npx wrangler secret put AI_API_KEY     # paste the key when prompted
+#   npm run worker:deploy
+#
+# The key is a SECRET and is deliberately not in this file — secrets are stored
+# by Cloudflare, never in the repo. Only non-sensitive settings live in [vars].
+#
+# After deploying, wrangler prints the URL. Put it in .env.production as
+# VITE_ANALYZE_API_URL (no trailing slash) and rebuild the frontend.
+
+name = "map-compare-ai"
+main = "worker/index.ts"
+compatibility_date = "2026-07-27"
+
+[vars]
+AI_PROVIDER = "google"
+# AI_MODEL = "gemini-flash-lite-latest"   # optional override
+
+# Restrict which sites may call this Worker from a browser. Not a substitute
+# for rate limiting — it does not stop direct requests — but it stops other
+# sites from spending your quota via a visitor's browser.
+ALLOWED_ORIGINS = "https://evolvedhow.github.io,http://localhost:5173,http://localhost:5174"
+
+[observability]
+enabled = true
