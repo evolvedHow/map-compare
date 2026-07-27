@@ -95,7 +95,9 @@ _DEFAULTS: dict[str, str] = {
     "openai":     "gpt-4o-mini",
     "groq":       "llama-3.3-70b-versatile",
     "openrouter": "google/gemini-flash-1.5",
-    "google":     "gemini/gemini-2.5-flash-lite",
+    # Rolling alias, not a pinned version — gemini-2.5-flash-lite was retired
+    # for new API keys and 404s with a message that reads like a config error.
+    "google":     "gemini/gemini-flash-lite-latest",
 }
 
 # LiteLLM provider prefix map

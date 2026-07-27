@@ -27,7 +27,14 @@ jobs:
 
       - run: npm ci
 
+      # VITE_ANALYZE_API_URL is the Railway backend the static site POSTs
+      # /api/analyze to. It is a public URL, not a secret, so it lives in
+      # Actions *variables* — set it under Settings → Secrets and variables →
+      # Actions → Variables. No AI key belongs here: a static build cannot
+      # keep one, so the key stays on the Railway service.
       - run: npm run build
+        env:
+          VITE_ANALYZE_API_URL: ${{ vars.VITE_ANALYZE_API_URL }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

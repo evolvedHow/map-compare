@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -45,17 +45,45 @@ function aiAnalyzePlugin(): Plugin {
   };
 }
 
+// Keep these tables in sync with backend/main.py — the dev middleware and the
+// deployed FastAPI backend must accept the same AI_PROVIDER values, or a
+// provider that works in production silently misbehaves in dev.
+const PROVIDER_MODELS: Record<string, string> = {
+  groq:       'llama-3.3-70b-versatile',
+  anthropic:  'claude-sonnet-4-6',
+  openai:     'gpt-4o-mini',
+  openrouter: 'google/gemini-flash-1.5',
+  // Rolling alias, not a pinned version — gemini-2.5-flash-lite was retired
+  // for new API keys and returned a 404 that read like a config error.
+  google:     'gemini-flash-lite-latest',
+};
+
+// Anthropic is not OpenAI-compatible and is called by callAnthropic instead.
+const PROVIDER_URLS: Record<string, string> = {
+  groq:       'https://api.groq.com/openai/v1',
+  openai:     'https://api.openai.com/v1',
+  openrouter: 'https://openrouter.ai/api/v1',
+  google:     'https://generativelanguage.googleapis.com/v1beta/openai',
+};
+
+export const SUPPORTED_PROVIDERS = Object.keys(PROVIDER_MODELS);
+
 function defaultModel(provider: string): string {
-  if (provider === 'anthropic')  return 'claude-sonnet-4-6';
-  if (provider === 'openai')     return 'gpt-4o-mini';
-  if (provider === 'openrouter') return 'google/gemini-flash-1.5';
-  return 'llama-3.3-70b-versatile';
+  const m = PROVIDER_MODELS[provider];
+  if (!m) throw new Error(unsupported(provider));
+  return m;
 }
 
 function providerUrl(provider: string): string {
-  if (provider === 'openai')     return 'https://api.openai.com/v1';
-  if (provider === 'openrouter') return 'https://openrouter.ai/api/v1';
-  return 'https://api.groq.com/openai/v1';
+  const u = PROVIDER_URLS[provider];
+  // Falling through to a default here is how a Gemini key ended up being sent
+  // to Groq's endpoint. Fail loudly instead.
+  if (!u) throw new Error(unsupported(provider));
+  return u;
+}
+
+function unsupported(provider: string): string {
+  return `AI_PROVIDER="${provider}" is not supported. Use one of: ${SUPPORTED_PROVIDERS.join(', ')}`;
 }
 
 function buildPrompt(body: any): string {
@@ -153,6 +181,16 @@ function parseJsonSafe(text: string): Record<string, unknown> {
 }
 
 export default defineConfig(({ mode }) => {
+  // Vite only exposes VITE_-prefixed vars, and never on process.env — so the
+  // AI_* keys in .env were invisible to the dev middleware, which reads
+  // process.env directly. The empty prefix loads every var; copy the ones we
+  // need across without clobbering anything already set in the real shell
+  // environment (which must win, so CI and one-off overrides still work).
+  const fileEnv = loadEnv(mode, process.cwd(), '');
+  for (const k of ['AI_PROVIDER', 'AI_API_KEY', 'AI_MODEL', 'VITE_ANALYZE_API_URL']) {
+    if (!process.env[k] && fileEnv[k]) process.env[k] = fileEnv[k];
+  }
+
   // In dev, if VITE_ANALYZE_API_URL is set, proxy to the local FastAPI backend.
   // If not set, the built-in Vite middleware (aiAnalyzePlugin) handles the call.
   const backendUrl = process.env.VITE_ANALYZE_API_URL;
