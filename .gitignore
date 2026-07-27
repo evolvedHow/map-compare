@@ -5,3 +5,6 @@ dist/
 .env
 .env.*
 !.env.example
+# Committed on purpose: build-time config for the Pages deploy. Holds only the
+# public backend URL — never a key. See the warning at the top of the file.
+!.env.production
