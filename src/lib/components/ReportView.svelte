@@ -8,6 +8,11 @@
   import { computeThresholds } from '../utils/spatialAnalysis';
   import type { DistrictThresholds, ColorByMode } from '../types';
   import { generateNarrative } from '../utils/aiReport';
+
+  // Setup hint is for developers only. Deployed visitors configure nothing —
+  // the Cloudflare Worker holds the key — so telling them to edit .env is
+  // advice they cannot act on.
+  const showSetupHint = import.meta.env.DEV;
   import type { NarrativeReport, AnalyzePayload } from '../utils/aiReport';
   import type { DistrictCompactness, SeatVotePoint } from '../utils/compactnessMetrics';
   import type { DistrictMetrics, DistrictDelta, FairnessMetrics } from '../types';
@@ -458,7 +463,7 @@
     <div class="px-5 py-3 border-b border-indigo-100 bg-indigo-50/50 flex items-center justify-between gap-4 flex-wrap">
       <div>
         <h3 class="text-sm font-bold text-indigo-900">AI Analysis</h3>
-        <p class="text-[11px] text-indigo-400 mt-0.5">Nonpartisan AI assessment · configure AI_PROVIDER and AI_API_KEY in .env</p>
+        <p class="text-[11px] text-indigo-400 mt-0.5">Nonpartisan AI assessment{#if showSetupHint} · configure AI_PROVIDER and AI_API_KEY in .env{/if}</p>
       </div>
       {#if !narrative && !narrativeLoading}
         <button

@@ -58,7 +58,8 @@ export default defineConfig(({ mode }) => {
     if (!process.env[k] && fileEnv[k]) process.env[k] = fileEnv[k];
   }
 
-  // In dev, if VITE_ANALYZE_API_URL is set, proxy to the local FastAPI backend.
+  // In dev, if VITE_ANALYZE_API_URL is set, proxy there — useful for testing
+  // against the deployed Worker, or a local one via `npm run worker:dev`.
   // If not set, the built-in Vite middleware (aiAnalyzePlugin) handles the call.
   const backendUrl = process.env.VITE_ANALYZE_API_URL;
   const proxyConfig = backendUrl

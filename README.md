@@ -23,8 +23,10 @@ map-compare lets researchers and advocates:
 - Upload custom shapefiles (`.shp` / `.dbf`) to compare unofficial proposals
 - Save plans to **IndexedDB** so they persist across browser sessions
 
-All computation happens entirely in the browser — no backend server required
-at runtime.
+All metric computation happens entirely in the browser.  The only server-side
+piece is a small Cloudflare Worker that holds the AI provider key — a static
+site cannot keep a secret, so the key cannot live in the bundle.  Everything
+except the AI narrative works with the Worker offline.
 
 **Audience:** Researchers, advocates comparing specific plans, expert witnesses
 preparing testimony.
@@ -44,7 +46,7 @@ preparing testimony.
 | Shapefile parsing | shpjs 6 + JSZip 3 (browser-side) |
 | CSV parsing | PapaParse 5 |
 | Persistence | IndexedDB (via idb 8) |
-| AI narratives | Direct browser-to-LLM API calls (Groq / Anthropic / OpenAI / Google) |
+| AI narratives | Cloudflare Worker proxy to an LLM (Groq / Anthropic / OpenAI / OpenRouter / Google) |
 | Package manager | npm |
 
 ---
@@ -227,12 +229,15 @@ Supported providers and their default models:
 |---|---|
 | Groq | `llama-3.3-70b-versatile` |
 | Anthropic | `claude-sonnet-4-6` |
-| OpenAI | `gpt-4o` |
-| Google | `gemini-1.5-flash` |
+| OpenAI | `gpt-4o-mini` |
+| OpenRouter | `google/gemini-flash-1.5` |
+| Google | `gemini-flash-lite-latest` |
 
-The AI call is made **directly from the browser** — the API key set in `.env`
-is baked into the client bundle.  For production, either restrict the key to
-your domain or use a proxy.
+The browser never talks to the provider directly and never sees the key.  It
+POSTs to `/api/analyze`, which is served by the Vite dev middleware locally and
+by the Cloudflare Worker in production.  Both import the same module —
+`shared/analyze-core.ts` — so dev and production cannot drift apart in which
+providers they support or which models they call.
 
 ---
 
