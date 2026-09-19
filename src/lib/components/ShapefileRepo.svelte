@@ -324,7 +324,7 @@
                   {added ? 'border-green-200 opacity-60' : 'border-blue-200 hover:border-blue-400'} transition-colors"
               >
                 <div class="min-w-0">
-                  <p class="text-xs font-medium text-gray-800 leading-tight truncate">{item.name}</p>
+                  <p class="text-xs font-medium text-gray-800 leading-tight">{item.name}</p>
                   <div class="flex flex-wrap gap-1 mt-1">
                     <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium {chamberBadge[item.chamber]}">
                       {chamberLabel[item.chamber]}

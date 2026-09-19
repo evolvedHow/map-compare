@@ -25,12 +25,36 @@
   let geojsonLayer = $state<L.GeoJSON | null>(null);
   const layerById = new Map<string, L.Path>();
 
+  // Custom fixed-position tooltip — rendered outside the overflow:hidden map
+  // container so it never gets clipped when hovering near the map edge.
+  let tipHtml    = $state('');
+  let tipX       = $state(0);
+  let tipY       = $state(0);
+  let tipVisible = $state(false);
+
+  function tipStyle(x: number, y: number): string {
+    const W = typeof window !== 'undefined' ? window.innerWidth  : 1280;
+    const H = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const TW = 210;   // max tooltip width (matches max-w below)
+    const TH = 130;   // estimated max tooltip height
+    const OX = 20;    // horizontal offset from cursor
+    const OY = 40;    // vertical offset upward from cursor
+    const left = x + OX + TW > W ? x - TW - OX : x + OX;
+    const top  = y - OY < 0    ? y + OX        : y - OY;
+    return `left:${left}px;top:${top}px;`;
+  }
+
   onMount(() => {
-    map = L.map(mapEl, { zoomControl: true }).setView([32.7, -83.5], 7);
+    map = L.map(mapEl, { zoomControl: true, attributionControl: false }).setView([32.7, -83.5], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 18
     }).addTo(map);
+    // Open attribution source links in a new tab so users don't lose the app when clicking.
+    L.control.attribution({
+      prefix: '<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>'
+    })
+      .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>')
+      .addTo(map);
     onMapReady?.(map);
   });
 
@@ -139,19 +163,24 @@
         const m = metrics?.get(id);
         layerById.set(id, layer as L.Path);
         const delta = isDeltaMode ? deltaMap?.get(id) : undefined;
-        (layer as L.Path).bindTooltip(buildTooltip(id, m, delta), {
-          direction: 'center',
-          sticky: false,
-          permanent: false,
+        const html = buildTooltip(id, m, delta);
+        layer.on('mousemove', (e: L.LeafletMouseEvent) => {
+          tipHtml    = html;
+          tipX       = e.originalEvent.clientX;
+          tipY       = e.originalEvent.clientY;
+          tipVisible = true;
         });
         layer.on('mouseover', () => onHover?.(id));
-        layer.on('mouseout',  () => onHover?.(null));
+        layer.on('mouseout',  () => { tipVisible = false; onHover?.(null); });
       }
     }).addTo(map);
 
     geojsonLayer = newLayer;
     const bounds = newLayer.getBounds();
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [12, 12] });
+    // Tight padding so Georgia fills the frame with minimal empty space
+    // above/below. The state is taller than wide, so height is usually the
+    // limiting dimension in these side-by-side panes.
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [2, 2] });
   });
 
   // Highlight sync: called when highlightedId changes OR geojsonLayer is rebuilt
@@ -168,8 +197,7 @@
         color:       isHl ? '#fbbf24' : '#fff',
         fillOpacity: isHl ? 0.9 : 0.7,
       });
-      if (isHl) l.openTooltip();
-      else      l.closeTooltip();
+      // tooltip is custom (fixed-position div); no Leaflet tooltip to open/close
     });
   });
 </script>
@@ -180,3 +208,12 @@
   </div>
   <div bind:this={mapEl} class="flex-1"></div>
 </div>
+
+{#if tipVisible}
+  <div
+    class="fixed z-[9999] pointer-events-none max-w-[210px] bg-white/95 border border-gray-200 rounded-lg shadow-lg px-3 py-2 text-xs leading-snug text-gray-800"
+    style={tipStyle(tipX, tipY)}
+  >
+    {@html tipHtml}
+  </div>
+{/if}

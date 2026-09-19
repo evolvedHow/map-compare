@@ -21,11 +21,12 @@
 
   interface CatalogEntry {
     filename: string;
-    name: string;
+    label: string;
     chamber: string;
     year: number;
     provenance: string;
     tags: string[];
+    description?: string;
   }
 
   interface LoadedPlan {
@@ -98,7 +99,7 @@
 
   function rubricSummary(p: LoadedPlan, s: ReturnType<typeof planStats>, thresh: DistrictThresholds) {
     return {
-      name: p.entry.name,
+      name: p.entry.label,
       year: p.entry.year,
       n: s.n,
       maxDev: s.maxDev,
@@ -303,8 +304,8 @@
     narrativeError = null;
     try {
       const payload: AnalyzePayload = {
-        planA: { name: planA.entry.name, year: planA.entry.year },
-        planB: { name: planB.entry.name, year: planB.entry.year },
+        planA: { name: planA.entry.label, year: planA.entry.year },
+        planB: { name: planB.entry.label, year: planB.entry.year },
         metricsA: {
           popDevMax:       sA.maxDev,
           polsbyPopper:    avgPPA,
@@ -390,9 +391,9 @@
       <div>
         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Redistricting Impact Analysis</p>
         <h2 class="text-xl font-bold text-gray-900 leading-tight">
-          <span class="text-blue-700">{planA.entry.name}</span>
+          <span class="text-blue-700">{planA.entry.label}</span>
           <span class="text-gray-400 font-normal mx-2">vs</span>
-          <span class="text-amber-600">{planB.entry.name}</span>
+          <span class="text-amber-600">{planB.entry.label}</span>
         </h2>
         <p class="text-xs text-gray-400 mt-1.5">
           <span class="text-blue-600 font-medium">A:</span> {planA.entry.provenance}, {planA.entry.year}
@@ -577,7 +578,7 @@
           metrics={planA.metrics}
           colorBy={effectiveColorBy}
           deltaMap={deltaMapA}
-          label={planA.entry.name}
+          label={planA.entry.label}
           onMapReady={onMapReadyA}
           onHover={(id) => (hoveredA = id)}
           highlightedId={hlA}
@@ -589,7 +590,7 @@
           metrics={planB.metrics}
           colorBy={effectiveColorBy}
           deltaMap={deltaMapB}
-          label={planB.entry.name}
+          label={planB.entry.label}
           onMapReady={onMapReadyB}
           onHover={(id) => (hoveredB = id)}
           highlightedId={hlB}
@@ -623,7 +624,7 @@
         geojson={planA.geojson}
         metrics={planA.metrics}
         {colorBy}
-        label={planA.entry.name}
+        label={planA.entry.label}
         width={340}
         height={230}
       />
@@ -631,7 +632,7 @@
         geojson={planB.geojson}
         metrics={planB.metrics}
         {colorBy}
-        label={planB.entry.name}
+        label={planB.entry.label}
         width={340}
         height={230}
       />
@@ -821,7 +822,7 @@
       />
       <ScoreCard
         label="Polsby-Popper (avg)"
-        description="4π·Area/Perimeter². 0–1 scale; higher = more compact."
+        description="Higher = more compact. A perfect circle = 1.0. Typical districts score 0.10–0.30; below 0.10 often indicates irregular 'tentacle' shapes."
         a={avgPPA}
         b={avgPPB}
         fmt="dec3"
@@ -829,7 +830,7 @@
       />
       <ScoreCard
         label="Convex Hull Ratio (avg)"
-        description="Area ÷ convex hull area. 1.0 = perfectly convex shape."
+        description="Higher = more compact. Compares each district to its tightest surrounding shape — 1.0 means no irregular notches or peninsulas. Typical range: 0.60–0.90."
         a={avgCHRA}
         b={avgCHRB}
         fmt="dec3"
@@ -1335,8 +1336,9 @@
     <p>
       Census data: 2020 Decennial Census, PL 94-171 redistricting file.
       Population and VAP figures are from the GeoJSON feature properties as published by the Georgia General Assembly.
+      Black VAP is read from the <code>pct_bvp</code> field (Black alone or in combination, the standard VRA measure) when available, falling back to <code>pct_bvap_al</code>.
       <strong>Polsby-Popper</strong> compactness: 4π·A/P² computed from geodesic area and perimeter using Turf.js.
-      <strong>Convex hull ratio</strong>: feature area divided by convex hull area.
+      <strong>Convex hull ratio</strong>: feature area divided by convex hull area; higher values indicate fewer irregular notches.
       <strong>Efficiency gap</strong>: (wasted Dem votes − wasted Rep votes) / total votes, where wasted = losing votes + winning votes above bare majority.
       Partisan lean derived from the composite <em>partisan</em> field in the source GeoJSON (blend of 2018–2022 election cycles).
       County splits count counties with district lines crossing their boundaries.

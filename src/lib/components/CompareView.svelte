@@ -18,11 +18,12 @@
 
   interface CatalogEntry {
     filename: string;
-    name: string;
+    label: string;
     chamber: 'senate' | 'house' | 'congress' | 'custom';
     year: number;
     provenance: string;
     tags: string[];
+    description?: string;
   }
 
   interface LoadedPlan {
@@ -52,6 +53,29 @@
 
   const geoCache = new Map<string, GeoJSON.FeatureCollection>();
   let openSections = $state(new Set<string>(['congress', 'senate', 'house']));
+  let browserCollapsed = $state(false);
+  let userToggledBrowser = $state(false);
+
+  // Auto-collapse the plan browser once both A and B are selected, so the maps
+  // get more room. Only auto-collapse once — after that, respect the user's
+  // manual toggle state until both plans are deselected.
+  $effect(() => {
+    if (planA && planB && !userToggledBrowser) {
+      browserCollapsed = true;
+    }
+    if (!planA || !planB) {
+      // Reset auto-collapse tracking when the pair is broken up
+      userToggledBrowser = false;
+      browserCollapsed = false;
+    }
+  });
+
+  function toggleBrowser() {
+    browserCollapsed = !browserCollapsed;
+    userToggledBrowser = true;
+  }
+
+  let previewCollapsed = $state(false);
 
   // Busy cursor + pointer-lock during report generation
   $effect(() => {
@@ -162,7 +186,7 @@
       if (isSlotA) planA = loaded;
       else planB = loaded;
     } catch (e) {
-      loadError = `Failed to load "${entry.name}": ${e instanceof Error ? e.message : String(e)}`;
+      loadError = `Failed to load "${entry.label}": ${e instanceof Error ? e.message : String(e)}`;
     }
     if (isSlotA) loadingFileA = null;
     else loadingFileB = null;
@@ -310,14 +334,49 @@
 </script>
 
 <div class="flex h-full overflow-hidden print:block print:h-auto print:overflow-visible">
+  <!-- ─── Sidebar (collapsed rail) ─── -->
+  {#if browserCollapsed}
+    <aside class="w-12 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col items-center py-3 select-none print:hidden">
+      <button
+        class="w-8 h-8 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-500"
+        onclick={toggleBrowser}
+        title="Show plan browser"
+        aria-label="Show plan browser"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      <div class="mt-3 flex flex-col items-center gap-2">
+        {#if planA}
+          <span class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold" title={planA.entry.label}>A</span>
+        {/if}
+        {#if planB}
+          <span class="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white text-[10px] font-bold" title={planB.entry.label}>B</span>
+        {/if}
+      </div>
+    </aside>
+  {:else}
   <!-- ─── Sidebar ─── -->
   <aside class="w-72 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden select-none print:hidden">
-    <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
-      <h2 class="text-sm font-semibold text-gray-700">Plan Browser</h2>
-      <p class="text-xs text-gray-400 mt-0.5 leading-tight">
-        1st click = baseline <span class="font-bold text-blue-600">A</span>.
-        Click a <em>different</em> plan = comparison <span class="font-bold text-amber-500">B</span>.
-      </p>
+    <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-start gap-2">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-sm font-semibold text-gray-700">Plan Browser</h2>
+        <p class="text-xs text-gray-400 mt-0.5 leading-tight">
+          1st click = baseline <span class="font-bold text-blue-600">A</span>.
+          Click a <em>different</em> plan = comparison <span class="font-bold text-amber-500">B</span>.
+        </p>
+      </div>
+      <button
+        class="shrink-0 w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"
+        onclick={toggleBrowser}
+        title="Collapse plan browser"
+        aria-label="Collapse plan browser"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+      </button>
     </div>
 
     <div class="flex-1 overflow-y-auto">
@@ -349,7 +408,7 @@
                   {isA ? 'A' : isB ? 'B' : ''}
                 </span>
                 <div class="min-w-0 flex-1">
-                  <p class="text-xs leading-snug {isA || isB ? 'font-semibold text-gray-900' : 'text-gray-700'} truncate">{entry.name}</p>
+                  <p class="text-xs leading-snug break-words {isA || isB ? 'font-semibold text-gray-900' : 'text-gray-700'}">{entry.label}</p>
                   <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                     <span class="text-[10px] text-gray-400">{entry.year}</span>
                     {#if entry.tags.includes('enacted')}
@@ -393,6 +452,7 @@
       <p class="text-[10px] text-gray-400">Click <strong>A</strong> to deselect. Click <strong>B</strong> to remove comparison.</p>
     </div>
   </aside>
+  {/if}
 
   <!-- ─── Main content ─── -->
   <main class="flex-1 overflow-y-auto bg-gray-50 print:overflow-visible print:h-auto print:w-full relative">
@@ -417,8 +477,8 @@
         <span class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">A</span>
         <div class="min-w-0">
           <p class="text-[10px] text-gray-400 uppercase tracking-wide">Baseline</p>
-          <p class="text-sm font-semibold {planA ? 'text-gray-900' : 'text-gray-400'} truncate max-w-xs">
-            {planA?.entry.name ?? 'Select a plan in the sidebar →'}
+          <p class="text-sm font-semibold leading-snug {planA ? 'text-gray-900' : 'text-gray-400'} max-w-xs">
+            {planA?.entry.label ?? 'Select a plan in the sidebar →'}
           </p>
         </div>
       </div>
@@ -429,8 +489,8 @@
           <span class="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs font-bold shrink-0">B</span>
           <div class="min-w-0">
             <p class="text-[10px] text-gray-400 uppercase tracking-wide">Comparison</p>
-            <p class="text-sm font-semibold {planB ? 'text-gray-900' : 'text-gray-400'} truncate max-w-xs">
-              {planB?.entry.name ?? 'Select a second plan →'}
+            <p class="text-sm font-semibold leading-snug {planB ? 'text-gray-900' : 'text-gray-400'} max-w-xs">
+              {planB?.entry.label ?? 'Select a second plan →'}
             </p>
           </div>
         </div>
@@ -487,27 +547,42 @@
         <!-- Quick maps preview -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50">
-            <span class="text-xs font-medium text-gray-500">Map Preview</span>
-            <div class="flex gap-1">
-              {#each [['partisan','Partisan'], ['minority_vap','Minority VAP'], ['pop','Population']] as [val, lbl]}
-                <button
-                  onclick={() => (colorBy = val as 'partisan' | 'minority_vap' | 'pop')}
-                  class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors
-                    {colorBy === val ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100 border border-gray-200'}"
-                >
-                  {lbl}
-                </button>
-              {/each}
+            <div class="flex items-center gap-2">
+              <button
+                onclick={() => (previewCollapsed = !previewCollapsed)}
+                class="w-5 h-5 rounded-md hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                title={previewCollapsed ? 'Show map preview' : 'Hide map preview'}
+                aria-label={previewCollapsed ? 'Show map preview' : 'Hide map preview'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform {previewCollapsed ? '-rotate-90' : ''}" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <span class="text-xs font-medium text-gray-500">Map Preview</span>
             </div>
+            {#if !previewCollapsed}
+              <div class="flex gap-1">
+                {#each [['partisan','Partisan'], ['minority_vap','Minority VAP'], ['pop','Population']] as [val, lbl]}
+                  <button
+                    onclick={() => (colorBy = val as 'partisan' | 'minority_vap' | 'pop')}
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors
+                      {colorBy === val ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100 border border-gray-200'}"
+                  >
+                    {lbl}
+                  </button>
+                {/each}
+              </div>
+            {/if}
           </div>
-          <div class="grid grid-cols-2" style="height: 260px;">
+          {#if !previewCollapsed}
+          <div class="grid grid-cols-2" style="height: max(460px, calc(100vh - 300px));">
             <div class="border-r border-gray-200 h-full">
               {#key planA?.entry.filename}
                 <MapPane
                   geojson={planA?.geojson ?? null}
                   metrics={planA?.metrics ?? null}
                   {colorBy}
-                  label={planA?.entry.name ?? 'Plan A'}
+                  label={planA?.entry.label ?? 'Plan A'}
                   onMapReady={onMapAReady}
                   onHover={(id) => (previewHoverA = id)}
                   highlightedId={previewHlA}
@@ -520,7 +595,7 @@
                   geojson={planB?.geojson ?? null}
                   metrics={planB?.metrics ?? null}
                   {colorBy}
-                  label={planB?.entry.name ?? 'Plan B'}
+                  label={planB?.entry.label ?? 'Plan B'}
                   onMapReady={onMapBReady}
                   onHover={(id) => (previewHoverB = id)}
                   highlightedId={previewHlB}
@@ -528,6 +603,21 @@
               {/key}
             </div>
           </div>
+          {#if planA?.entry.description || planB?.entry.description}
+            <div class="grid grid-cols-2 border-t border-gray-100 bg-gray-50">
+              <div class="border-r border-gray-100 px-3 py-2">
+                {#if planA?.entry.description}
+                  <p class="text-[11px] leading-snug text-gray-600"><span class="font-semibold text-blue-700">A:</span> {planA.entry.description}</p>
+                {/if}
+              </div>
+              <div class="px-3 py-2">
+                {#if planB?.entry.description}
+                  <p class="text-[11px] leading-snug text-gray-600"><span class="font-semibold text-amber-600">B:</span> {planB.entry.description}</p>
+                {/if}
+              </div>
+            </div>
+          {/if}
+          {/if}
         </div>
 
         <!-- Quick comparison cards — only shown when both plans selected -->

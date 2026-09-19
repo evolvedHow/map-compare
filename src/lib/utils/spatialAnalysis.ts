@@ -195,7 +195,9 @@ export function metricsFromGeoJsonProperties(
       whiteVap = wvap > 0 ? wvap : Math.max(0, tvap - bipocVap);
     } else {
       // Congress format: ratio values
-      const pctBlack = Number(p.pct_bvap_al ?? 0);
+      // pct_bvp = Black VAP alone or in combination (standard VRA measure)
+      // pct_bvap_al = Black VAP alone (non-Hispanic); fallback if pct_bvp absent
+      const pctBlack = Number(p.pct_bvp ?? p.pct_bvap_al ?? 0);
       const pctAsian = Number(p.pct_avap_al ?? 0);
       const pctHispanic = Number(p.pct_hvp ?? 0);
       const pctWhite = Number(p.pct_wvap_al ?? 0);

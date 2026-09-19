@@ -1,290 +1,329 @@
 [
   {
-    "filename": "congress12_census20.geojson",
-    "name": "GA Congress — 2012 Plan (2020 Census data)",
+    "filename": "congress_enacted_24_2024update.geojson",
+    "label": "Current US Congress, for 2024 elections",
     "chamber": "congress",
-    "year": 2012,
+    "year": 2024,
     "provenance": "Georgia General Assembly",
-    "tags": ["2020-census"]
-  },
-  {
-    "filename": "congress21_census20.geojson",
-    "name": "GA Congress — 2021 Plan (2020 Census data)",
-    "chamber": "congress",
-    "year": 2021,
-    "provenance": "Georgia General Assembly",
-    "tags": ["2020-census"]
-  },
-  {
-    "filename": "congress21_p2.geojson",
-    "name": "GA Congress — 2021 Plan v2",
-    "chamber": "congress",
-    "year": 2021,
-    "provenance": "Georgia General Assembly",
-    "tags": []
-  },
-  {
-    "filename": "congress_cooper.geojson",
-    "name": "GA Congress — Cooper Remedial Plan",
-    "chamber": "congress",
-    "year": 2023,
-    "provenance": "Special Master Cooper (court remedy)",
-    "tags": ["remedy", "cooper"]
+    "tags": ["enacted", "2024-update"],
+    "description": "The US Congressional map currently in effect in Georgia, enacted by the General Assembly in December 2023 after the federal court ruling in Alpha Phi Alpha v. Raffensperger and used for the 2024 elections."
   },
   {
     "filename": "congress_enacted_2123_2024update.geojson",
-    "name": "GA Congress — Enacted 2021-23 (2024 update)",
+    "label": "US Congress, 2021 - 2024",
     "chamber": "congress",
     "year": 2023,
     "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
+    "tags": ["enacted", "2024-update"],
+    "description": "The Congressional map enacted by the Georgia General Assembly in 2021 and used for the 2022 elections; struck down in October 2023 as violating Section 2 of the Voting Rights Act."
   },
   {
-    "filename": "congress_enacted_24_2024update.geojson",
-    "name": "GA Congress — Enacted 2024 (2024 update)",
+    "filename": "congress12_census20.geojson",
+    "label": "US Congress, 2011-2021",
     "chamber": "congress",
-    "year": 2024,
+    "year": 2012,
     "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
-  },
-  {
-    "filename": "congress_proposed3.geojson",
-    "name": "GA Congress — Proposed Plan 3",
-    "chamber": "congress",
-    "year": 2021,
-    "provenance": "Georgia General Assembly",
-    "tags": ["proposed"]
-  },
-  {
-    "filename": "congress_remedy_1.geojson",
-    "name": "GA Congress — Remedy Plan 1",
-    "chamber": "congress",
-    "year": 2023,
-    "provenance": "Georgia redistricting remedy (Allen v. Milligan)",
-    "tags": ["remedy"]
-  },
-  {
-    "filename": "congress_remedy_1_2024update.geojson",
-    "name": "GA Congress — Remedy Plan 1 (2024 update)",
-    "chamber": "congress",
-    "year": 2024,
-    "provenance": "Georgia redistricting remedy (Allen v. Milligan)",
-    "tags": ["remedy", "2024-update"]
+    "tags": ["2020-census"],
+    "description": "The Congressional map enacted after the 2010 census and in effect from 2012 through 2020, re-scored here against 2020 census demographics for comparison."
   },
   {
     "filename": "congress_remedy_2.geojson",
-    "name": "GA Congress — Remedy Plan 2",
+    "label": "US Congress, GHDC & GSDC, 2023",
     "chamber": "congress",
     "year": 2023,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy"]
+    "provenance": "Georgia House and Senate Democratic Caucuses",
+    "tags": ["remedy"],
+    "description": "Congressional remedy plan submitted jointly by the Georgia House and Senate Democratic Caucuses during the 2023 remedial proceedings following Alpha Phi Alpha v. Raffensperger."
+  },
+  {
+    "filename": "congress21_census20.geojson",
+    "label": "US Congress, Senate Committee Chair, 2021",
+    "chamber": "congress",
+    "year": 2021,
+    "provenance": "Georgia Senate Reapportionment Committee Chair",
+    "tags": ["proposed"],
+    "description": "Congressional plan proposed by the Georgia Senate Reapportionment Committee Chair during the 2021 redistricting cycle."
+  },
+  {
+    "filename": "congress21_p2.geojson",
+    "label": "US Congress, Democratic Caucuses, 2021",
+    "chamber": "congress",
+    "year": 2021,
+    "provenance": "Georgia Democratic Caucuses",
+    "tags": ["proposed", "democratic"],
+    "description": "Congressional plan proposed by the Georgia Democratic Caucuses as an alternative during the 2021 redistricting cycle."
+  },
+  {
+    "filename": "congress_cooper.geojson",
+    "label": "US Congress, Cooper remedial plan",
+    "chamber": "congress",
+    "year": 2023,
+    "provenance": "William S. Cooper, expert witness",
+    "tags": ["remedy", "cooper"],
+    "description": "Plan proposed by expert witness William S. Cooper during the 2023 federal court trial in Alpha Phi Alpha v. Raffensperger to demonstrate that an additional Black-opportunity Congressional district was feasible."
+  },
+  {
+    "filename": "congress_remedy_1.geojson",
+    "label": "US Congress, Milligan-style remedy 1",
+    "chamber": "congress",
+    "year": 2023,
+    "provenance": "Illustrative remedy (Allen v. Milligan)",
+    "tags": ["remedy"],
+    "description": "Illustrative Congressional remedy plan drawn along the lines suggested by Allen v. Milligan to add a second majority-Black district in metro Atlanta."
+  },
+  {
+    "filename": "congress_remedy_1_2024update.geojson",
+    "label": "US Congress, Milligan-style remedy 1 (2024 data)",
+    "chamber": "congress",
+    "year": 2024,
+    "provenance": "Illustrative remedy (Allen v. Milligan)",
+    "tags": ["remedy", "2024-update"],
+    "description": "The Milligan-style Congressional remedy plan re-scored against 2024 election results and updated ACS demographics."
+  },
+  {
+    "filename": "congress_proposed3.geojson",
+    "label": "US Congress, alternate proposal 3, 2021",
+    "chamber": "congress",
+    "year": 2021,
+    "provenance": "Georgia General Assembly working draft",
+    "tags": ["proposed"],
+    "description": "An alternate Congressional draft circulated during the 2021 legislative redistricting session; not adopted."
   },
   {
     "filename": "enacted_congress22.geojson",
-    "name": "GA Congress — Enacted 2022",
+    "label": "US Congress, enacted 2022 (original)",
     "chamber": "congress",
     "year": 2022,
     "provenance": "Georgia General Assembly",
-    "tags": ["enacted"]
+    "tags": ["enacted"],
+    "description": "The originally-enacted 2021 Congressional map as used in the 2022 elections, prior to the 2024 legislative update that lightly refreshed metadata."
   },
+
   {
-    "filename": "enacted_house22.geojson",
-    "name": "GA House — Enacted 2022",
-    "chamber": "house",
-    "year": 2022,
-    "provenance": "Georgia General Assembly",
-    "tags": ["enacted"]
-  },
-  {
-    "filename": "enacted_house22_2024update.geojson",
-    "name": "GA House — Enacted 2022 (2024 update)",
-    "chamber": "house",
-    "year": 2024,
-    "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
-  },
-  {
-    "filename": "enacted_senate22.geojson",
-    "name": "GA Senate — Enacted 2022",
-    "chamber": "senate",
-    "year": 2022,
-    "provenance": "Georgia General Assembly",
-    "tags": ["enacted"]
-  },
-  {
-    "filename": "enacted_senate22_2024update.geojson",
-    "name": "GA Senate — Enacted 2022 (2024 update)",
+    "filename": "senate_enacted_24_2024update.geojson",
+    "label": "Current State Senate, for 2024 elections",
     "chamber": "senate",
     "year": 2024,
     "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
-  },
-  {
-    "filename": "house15_census20.geojson",
-    "name": "GA House — 2015 Plan (2020 Census data)",
-    "chamber": "house",
-    "year": 2015,
-    "provenance": "Georgia General Assembly",
-    "tags": ["2020-census"]
-  },
-  {
-    "filename": "house_enacted_2123_2024update.geojson",
-    "name": "GA House — Enacted 2021-23 (2024 update)",
-    "chamber": "house",
-    "year": 2023,
-    "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
-  },
-  {
-    "filename": "house_enacted_24_2024update.geojson",
-    "name": "GA House — Enacted 2024 (2024 update)",
-    "chamber": "house",
-    "year": 2024,
-    "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
-  },
-  {
-    "filename": "house_prop1_dem.geojson",
-    "name": "GA House — Proposed Plan 1 (Democratic)",
-    "chamber": "house",
-    "year": 2021,
-    "provenance": "Georgia Democratic caucus",
-    "tags": ["proposed", "democratic"]
-  },
-  {
-    "filename": "house_prop2_rep.geojson",
-    "name": "GA House — Proposed Plan 2 (Republican)",
-    "chamber": "house",
-    "year": 2021,
-    "provenance": "Georgia Republican caucus",
-    "tags": ["proposed", "republican"]
-  },
-  {
-    "filename": "house_prop3_rep.geojson",
-    "name": "GA House — Proposed Plan 3 (Republican)",
-    "chamber": "house",
-    "year": 2021,
-    "provenance": "Georgia Republican caucus",
-    "tags": ["proposed", "republican"]
-  },
-  {
-    "filename": "house_remedy_1.geojson",
-    "name": "GA House — Remedy Plan 1",
-    "chamber": "house",
-    "year": 2023,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy"]
-  },
-  {
-    "filename": "house_remedy_1_2024update.geojson",
-    "name": "GA House — Remedy Plan 1 (2024 update)",
-    "chamber": "house",
-    "year": 2024,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy", "2024-update"]
-  },
-  {
-    "filename": "house_remedy_2.geojson",
-    "name": "GA House — Remedy Plan 2",
-    "chamber": "house",
-    "year": 2023,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy"]
-  },
-  {
-    "filename": "senate14_census20.geojson",
-    "name": "GA Senate — 2014 Plan (2020 Census data)",
-    "chamber": "senate",
-    "year": 2014,
-    "provenance": "Georgia General Assembly",
-    "tags": ["2020-census"]
+    "tags": ["enacted", "2024-update"],
+    "description": "The State Senate map currently in effect in Georgia, enacted by the General Assembly in December 2023 after the federal court ruling in Alpha Phi Alpha v. Raffensperger and used for the 2024 elections."
   },
   {
     "filename": "senate_enacted_2123_2024update.geojson",
-    "name": "GA Senate — Enacted 2021-23 (2024 update)",
+    "label": "State Senate, 2021 - 2024",
     "chamber": "senate",
     "year": 2023,
     "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
+    "tags": ["enacted", "2024-update"],
+    "description": "The State Senate map enacted by the Georgia General Assembly in 2021 and used for the 2022 elections; superseded in 2023 following the Voting Rights Act ruling."
   },
   {
-    "filename": "senate_enacted_24_2024update.geojson",
-    "name": "GA Senate — Enacted 2024 (2024 update)",
+    "filename": "senate14_census20.geojson",
+    "label": "State Senate, 2014-2021",
     "chamber": "senate",
-    "year": 2024,
+    "year": 2014,
     "provenance": "Georgia General Assembly",
-    "tags": ["enacted", "2024-update"]
-  },
-  {
-    "filename": "senate_prop1_dem.geojson",
-    "name": "GA Senate — Proposed Plan 1 (Democratic)",
-    "chamber": "senate",
-    "year": 2021,
-    "provenance": "Georgia Democratic caucus",
-    "tags": ["proposed", "democratic"]
-  },
-  {
-    "filename": "senate_prop2_rep.geojson",
-    "name": "GA Senate — Proposed Plan 2 (Republican)",
-    "chamber": "senate",
-    "year": 2021,
-    "provenance": "Georgia Republican caucus",
-    "tags": ["proposed", "republican"]
-  },
-  {
-    "filename": "senate_prop3_rep.geojson",
-    "name": "GA Senate — Proposed Plan 3 (Republican)",
-    "chamber": "senate",
-    "year": 2021,
-    "provenance": "Georgia Republican caucus",
-    "tags": ["proposed", "republican"]
-  },
-  {
-    "filename": "senate_remedy.geojson",
-    "name": "GA Senate — Remedy Plan",
-    "chamber": "senate",
-    "year": 2023,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy"]
+    "tags": ["2020-census"],
+    "description": "The State Senate map enacted after the 2010 census and in effect from 2014 through 2020, re-scored here against 2020 census demographics for comparison."
   },
   {
     "filename": "senate_remedy_2.geojson",
-    "name": "GA Senate — Remedy Plan 2",
+    "label": "State Senate, GSDC, 2023",
     "chamber": "senate",
     "year": 2023,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy"]
+    "provenance": "Georgia Senate Democratic Caucus",
+    "tags": ["remedy"],
+    "description": "State Senate remedy plan submitted by the Georgia Senate Democratic Caucus during the 2023 remedial proceedings following Alpha Phi Alpha v. Raffensperger."
+  },
+  {
+    "filename": "senate_prop1_dem.geojson",
+    "label": "State Senate, Senate Democratic Caucus, 2021",
+    "chamber": "senate",
+    "year": 2021,
+    "provenance": "Georgia Senate Democratic Caucus",
+    "tags": ["proposed", "democratic"],
+    "description": "State Senate plan proposed by the Georgia Senate Democratic Caucus during the 2021 redistricting cycle."
+  },
+  {
+    "filename": "senate_prop2_rep.geojson",
+    "label": "State Senate, Senate Committee Chair, 2021",
+    "chamber": "senate",
+    "year": 2021,
+    "provenance": "Georgia Senate Reapportionment Committee Chair",
+    "tags": ["proposed", "republican"],
+    "description": "State Senate plan proposed by the Georgia Senate Reapportionment Committee Chair during the 2021 redistricting cycle."
+  },
+  {
+    "filename": "senate_prop3_rep.geojson",
+    "label": "State Senate, alternate Republican proposal, 2021",
+    "chamber": "senate",
+    "year": 2021,
+    "provenance": "Georgia Senate Republican Caucus",
+    "tags": ["proposed", "republican"],
+    "description": "Alternate State Senate proposal circulated by the Senate Republican Caucus during the 2021 redistricting cycle; not adopted."
+  },
+  {
+    "filename": "senate_remedy.geojson",
+    "label": "State Senate, illustrative remedy, 2023",
+    "chamber": "senate",
+    "year": 2023,
+    "provenance": "Illustrative remedy",
+    "tags": ["remedy"],
+    "description": "Illustrative State Senate remedy plan drawn to add Black-opportunity districts consistent with the 2023 Voting Rights Act ruling."
   },
   {
     "filename": "senate_remedy_40pct.geojson",
-    "name": "GA Senate — Remedy 40% Plan",
+    "label": "State Senate, 40% BVAP remedy, 2023",
     "chamber": "senate",
     "year": 2023,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy", "40pct"]
+    "provenance": "Illustrative remedy",
+    "tags": ["remedy", "40pct"],
+    "description": "Illustrative State Senate remedy plan using a 40% Black voting-age population coalition threshold rather than a strict majority-Black standard."
   },
   {
     "filename": "senate_remedy_40pct_2024update.geojson",
-    "name": "GA Senate — Remedy 40% Plan (2024 update)",
+    "label": "State Senate, 40% BVAP remedy (2024 data)",
     "chamber": "senate",
     "year": 2024,
-    "provenance": "Georgia redistricting remedy",
-    "tags": ["remedy", "40pct", "2024-update"]
+    "provenance": "Illustrative remedy",
+    "tags": ["remedy", "40pct", "2024-update"],
+    "description": "The 40% BVAP State Senate remedy plan re-scored against 2024 election results and updated ACS demographics."
   },
   {
+    "filename": "enacted_senate22.geojson",
+    "label": "State Senate, enacted 2022 (original)",
+    "chamber": "senate",
+    "year": 2022,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted"],
+    "description": "The originally-enacted 2021 State Senate map as used in the 2022 elections, prior to the 2024 legislative update."
+  },
+  {
+    "filename": "enacted_senate22_2024update.geojson",
+    "label": "State Senate, enacted 2022 (2024 update)",
+    "chamber": "senate",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"],
+    "description": "The 2022-enacted State Senate map with the 2024 legislative metadata refresh, used as a baseline for comparison against the current 2024 map."
+  },
+
+  {
+    "filename": "house_enacted_24_2024update.geojson",
+    "label": "Current State House, for 2024 elections",
+    "chamber": "house",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"],
+    "description": "The State House map currently in effect in Georgia, enacted by the General Assembly in December 2023 after the federal court ruling in Alpha Phi Alpha v. Raffensperger and used for the 2024 elections."
+  },
+  {
+    "filename": "house_enacted_2123_2024update.geojson",
+    "label": "State House, 2021 - 2024",
+    "chamber": "house",
+    "year": 2023,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"],
+    "description": "The State House map enacted by the Georgia General Assembly in 2021 and used for the 2022 elections; superseded in 2023 following the Voting Rights Act ruling."
+  },
+  {
+    "filename": "house15_census20.geojson",
+    "label": "State House, 2015-2021",
+    "chamber": "house",
+    "year": 2015,
+    "provenance": "Georgia General Assembly",
+    "tags": ["2020-census"],
+    "description": "The State House map enacted after the 2010 census and in effect from 2015 through 2020, re-scored here against 2020 census demographics for comparison."
+  },
+  {
+    "filename": "house_remedy_2.geojson",
+    "label": "State House, GHDC, 2023",
+    "chamber": "house",
+    "year": 2023,
+    "provenance": "Georgia House Democratic Caucus",
+    "tags": ["remedy"],
+    "description": "State House remedy plan submitted by the Georgia House Democratic Caucus during the 2023 remedial proceedings following Alpha Phi Alpha v. Raffensperger."
+  },
+  {
+    "filename": "house_prop1_dem.geojson",
+    "label": "State House, House Democratic Caucus, 2021",
+    "chamber": "house",
+    "year": 2021,
+    "provenance": "Georgia House Democratic Caucus",
+    "tags": ["proposed", "democratic"],
+    "description": "State House plan proposed by the Georgia House Democratic Caucus during the 2021 redistricting cycle."
+  },
+  {
+    "filename": "house_prop2_rep.geojson",
+    "label": "State House, House Committee Chair, 2021",
+    "chamber": "house",
+    "year": 2021,
+    "provenance": "Georgia House Reapportionment Committee Chair",
+    "tags": ["proposed", "republican"],
+    "description": "State House plan proposed by the Georgia House Reapportionment Committee Chair during the 2021 redistricting cycle."
+  },
+  {
+    "filename": "house_prop3_rep.geojson",
+    "label": "State House, alternate Republican proposal, 2021",
+    "chamber": "house",
+    "year": 2021,
+    "provenance": "Georgia House Republican Caucus",
+    "tags": ["proposed", "republican"],
+    "description": "Alternate State House proposal circulated by the House Republican Caucus during the 2021 redistricting cycle; not adopted."
+  },
+  {
+    "filename": "house_remedy_1.geojson",
+    "label": "State House, illustrative remedy 1, 2023",
+    "chamber": "house",
+    "year": 2023,
+    "provenance": "Illustrative remedy",
+    "tags": ["remedy"],
+    "description": "Illustrative State House remedy plan drawn to add Black-opportunity districts consistent with the 2023 Voting Rights Act ruling."
+  },
+  {
+    "filename": "house_remedy_1_2024update.geojson",
+    "label": "State House, illustrative remedy 1 (2024 data)",
+    "chamber": "house",
+    "year": 2024,
+    "provenance": "Illustrative remedy",
+    "tags": ["remedy", "2024-update"],
+    "description": "The illustrative State House remedy plan re-scored against 2024 election results and updated ACS demographics."
+  },
+  {
+    "filename": "enacted_house22.geojson",
+    "label": "State House, enacted 2022 (original)",
+    "chamber": "house",
+    "year": 2022,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted"],
+    "description": "The originally-enacted 2021 State House map as used in the 2022 elections, prior to the 2024 legislative update."
+  },
+  {
+    "filename": "enacted_house22_2024update.geojson",
+    "label": "State House, enacted 2022 (2024 update)",
+    "chamber": "house",
+    "year": 2024,
+    "provenance": "Georgia General Assembly",
+    "tags": ["enacted", "2024-update"],
+    "description": "The 2022-enacted State House map with the 2024 legislative metadata refresh, used as a baseline for comparison against the current 2024 map."
+  },
+
+  {
     "filename": "county.geojson",
-    "name": "GA County Boundaries",
+    "label": "Georgia county boundaries",
     "chamber": "custom",
     "year": 2020,
     "provenance": "U.S. Census Bureau",
-    "tags": ["geography", "counties"]
+    "tags": ["geography", "counties"],
+    "description": "The 159 Georgia county boundaries from the 2020 Census TIGER/Line files. Used as a reference layer for county-splits analysis."
   },
   {
     "filename": "places_2020data.geojson",
-    "name": "GA Places — 2020 Census Data",
+    "label": "Georgia places (2020 Census)",
     "chamber": "custom",
     "year": 2020,
     "provenance": "U.S. Census Bureau, 2020",
-    "tags": ["geography", "places"]
+    "tags": ["geography", "places"],
+    "description": "Georgia incorporated places and CDPs from the 2020 Census. Useful as a reference layer for identifying cities and towns relative to district boundaries."
   }
 ]
