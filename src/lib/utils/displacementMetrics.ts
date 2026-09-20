@@ -1,6 +1,14 @@
 /**
  * Browser-side population displacement metric.
  *
+ * Both methods now produce a *full A×B movement matrix*: for every Plan A
+ * district we record not just the dominant Plan B match but every Plan B
+ * district that receives people from it (area-weighted shares → population).
+ *
+ * "Displaced" is defined relative to the same-numbered district (consistent
+ * with the report's default Number matching): residents are counted as having
+ * left district X when their Plan B district number differs from X.
+ *
  * Two methods are provided; choose based on plan size:
  *
  *   area_weighted  — polygon intersection via Turf.js. Accurate; O(n²) with
@@ -97,17 +105,29 @@ export function computeDisplacementAreaWeighted(
     if (overlaps.length === 0) continue;
 
     overlaps.sort((a, b) => b.area - a.area);
-    const dominantArea = overlaps[0].area;
-    const displacedArea = Math.max(0, areaA - dominantArea);
-    const displacedPop  = popA > 0 ? Math.round(popA * displacedArea / areaA) : 0;
-    totalDisplaced += displacedPop;
+
+    // Residents are "displaced / moved out" when their Plan B district number
+    // differs from the Plan A district (same-number semantics, matching the
+    // report's Number matching mode).  E.g. old CD7 with only 12% of its area
+    // remaining in new CD7 → 88% of CD7's population moved out.
+    const ownShare = overlaps.some(o => o.idB === idA)
+      ? Math.min(overlaps.find(o => o.idB === idA)!.area / areaA, 1)
+      : 0;
+    const movedOutPct = Math.max(0, 1 - ownShare);
+    const movedOutPop = popA > 0 ? Math.round(popA * movedOutPct) : 0;
+    totalDisplaced += movedOutPop;
+
+    const movedTo = overlaps
+      .map(o => ({ districtIdB: o.idB, pop: popA > 0 ? Math.round(popA * o.area / areaA) : 0, pct: areaA > 0 ? o.area / areaA : 0 }))
+      .sort((a, b) => b.pct - a.pct);
 
     districts.push({
       districtIdA: idA,
       districtIdB: overlaps[0].idB,
       popA,
-      displacedFromA: displacedPop,
-      displacedPct: popA > 0 ? displacedPop / popA : 0,
+      displacedFromA: movedOutPop,
+      displacedPct: movedOutPct,
+      movedTo,
     });
   }
 
@@ -164,6 +184,9 @@ export function computeDisplacementCentroid(
       popA,
       displacedFromA: displacedPop,
       displacedPct: sameDistrict ? 0 : 1,
+      movedTo: (sameDistrict || containingB == null)
+        ? []
+        : [{ districtIdB: containingB, pop: popA, pct: 1 }],
     });
   }
 

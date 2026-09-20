@@ -381,6 +381,67 @@
   function printReport() {
     window.print();
   }
+
+  // ── Export maps as PNGs (rasterize the off-screen SVG renders) ───────────
+
+  const EXPORT_W = 760;
+  const EXPORT_H = 520;
+  const exportColorBy = $derived<ColorByMode | 'delta'>(
+    deltaColorBy ? 'delta' : colorBy
+  );
+  // SvgMap's "delta" mode keys deltas by Plan A district id; remap for Plan B.
+  const exportDeltasB = $derived(
+    deltas.map(d => ({ ...d, districtId: d.matchedBId }))
+  );
+  const MODE_LABEL: Record<string, string> = {
+    partisan: 'partisan', minority_vap: 'minority-vap', pop: 'population',
+    flip: 'changed', competitive_change: 'competitive-change',
+    minority_change: 'minority-change', delta: 'changed',
+  };
+  let exportBox: HTMLDivElement | null = $state(null);
+
+  function slug(s: string): string {
+    return s.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40) || 'plan';
+  }
+
+  function svgToPng(svg: SVGSVGElement, filename: string) {
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(EXPORT_W));
+    clone.setAttribute('height', String(EXPORT_H));
+    const xml = new XMLSerializer().serializeToString(clone);
+    const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
+    const img = new Image();
+    img.onload = () => {
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = EXPORT_W * scale;
+      canvas.height = EXPORT_H * scale;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, EXPORT_W, EXPORT_H);
+        const a = Object.assign(document.createElement('a'), {
+          href: canvas.toDataURL('image/png'),
+          download: filename,
+        });
+        a.click();
+      }
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+
+  function exportMapPngs() {
+    if (!exportBox) return;
+    const svgs = [...exportBox.querySelectorAll('svg')];
+    if (svgs.length < 2) return;
+    const mode = MODE_LABEL[deltaColorBy ?? colorBy] ?? 'map';
+    svgToPng(svgs[0] as SVGSVGElement, `plan-a-${slug(planA.entry.label)}-${mode}.png`);
+    svgToPng(svgs[1] as SVGSVGElement, `plan-b-${slug(planB.entry.label)}-${mode}.png`);
+  }
 </script>
 
 <div class="space-y-6 pb-10 print:space-y-4">
@@ -420,6 +481,16 @@
           class="flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
         >
           Export CSV
+        </button>
+        <button
+          onclick={exportMapPngs}
+          class="flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          title="Download the two district maps (Plan A &amp; Plan B) for the current view as PNG files"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Map PNGs
         </button>
       </div>
     </div>
@@ -604,7 +675,10 @@
       {@const bvapB = hoveredDelta.b.vap > 0 ? (hoveredDelta.b.blackVap / hoveredDelta.b.vap) * 100 : 0}
       <div class="px-5 py-2 bg-indigo-50 border-t border-indigo-100 text-xs flex gap-4 flex-wrap items-center print:hidden">
         <span class="font-bold text-gray-800">
-          D{hoveredDelta.districtId}{hoveredDelta.isRenumbered ? ` → B-D${hoveredDelta.matchedBId}` : ''}
+          A-D{hoveredDelta.districtId} → B-D{hoveredDelta.matchedBId}
+          {#if hoveredDelta.isRenumbered}
+            <span class="text-[9px] text-violet-600 font-medium ml-1">(renumbered)</span>
+          {/if}
         </span>
         <span>
           Lean:
@@ -624,6 +698,7 @@
         geojson={planA.geojson}
         metrics={planA.metrics}
         {colorBy}
+        deltaMap={deltaMapA}
         label={planA.entry.label}
         width={340}
         height={230}
@@ -632,6 +707,7 @@
         geojson={planB.geojson}
         metrics={planB.metrics}
         {colorBy}
+        deltaMap={deltaMapB}
         label={planB.entry.label}
         width={340}
         height={230}
@@ -641,14 +717,23 @@
     <!-- Legend -->
     <div class="px-5 py-2 border-t border-gray-100 flex items-center gap-5 text-[11px] text-gray-500 bg-gray-50 flex-wrap">
       {#if effectiveColorBy === 'partisan'}
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#1a4fa0] shrink-0"></span>D+15+</span>
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#93b8e8] shrink-0"></span>Lean Dem</span>
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#e8a097] shrink-0"></span>Lean Rep</span>
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#a01a1a] shrink-0"></span>R+15+</span>
+        {#each [
+          ['Safe R', '#bc131e'], ['Lean R', '#eb4956'], ['Competitive R', '#c36e9e'],
+          ['Competitive D', '#7279db'], ['Lean D', '#3c6ebf'], ['Safe D', '#1f4bae']
+        ] as [t, c]}
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm shrink-0" style="background:{c}"></span>{t}</span>
+        {/each}
       {:else if effectiveColorBy === 'minority_vap'}
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f5f3ff] border border-gray-200 shrink-0"></span>&lt;15%</span>
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#a78bfa] shrink-0"></span>30–45%</span>
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#5c2d91] shrink-0"></span>&gt;60%</span>
+        {#each [
+          ['≥50% Majority', '#5c2d91'], ['37–50% Influence', '#8b5cf6'], ['25–37%', '#a78bfa'],
+          ['15–25%', '#ddd6fe'], ['<15%', '#f5f3ff']
+        ] as [t, c]}
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm shrink-0 border border-gray-200" style="background:{c}"></span>{t}</span>
+        {/each}
+      {:else if effectiveColorBy === 'pop'}
+        {#each [['Higher', '#14532d'], ['Same (±0.5%)', '#e5e7eb'], ['Lower', '#bbf7d0']] as [t, c]}
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm shrink-0 border border-gray-200" style="background:{c}"></span>{t}</span>
+        {/each}
       {:else if effectiveColorBy === 'flip'}
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#2563eb] shrink-0"></span>Gained Dem</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#dc2626] shrink-0"></span>Lost Dem</span>
@@ -657,13 +742,10 @@
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#16a34a] shrink-0"></span>Gained Competitive</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f97316] shrink-0"></span>Lost Competitive</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d1d5db] shrink-0"></span>Unchanged</span>
-      {:else if effectiveColorBy === 'minority_change'}
+      {:else}
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#7c3aed] shrink-0"></span>Gained BVAP/MVAP</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d97706] shrink-0"></span>Lost BVAP/MVAP</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d1d5db] shrink-0"></span>Unchanged</span>
-      {:else}
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f0fdf4] border border-gray-200 shrink-0"></span>Lower</span>
-        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#14532d] shrink-0"></span>Higher</span>
       {/if}
     </div>
   </div>
@@ -695,7 +777,8 @@
           <div class="flex items-center gap-2.5 mt-1.5 flex-wrap text-[10px] text-gray-500">
             <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#1d4ed8] inline-block"></span>D+10+</span>
             <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#93c5fd] inline-block"></span>D+5–10</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#d1d5db] inline-block"></span>Stable</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#fcd34d] inline-block"></span>Minority VAP +5</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#e5e7eb] inline-block"></span>Stable</span>
             <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#fca5a5] inline-block"></span>R+5–10</span>
             <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm bg-[#b91c1c] inline-block"></span>R+10+</span>
           </div>
@@ -740,8 +823,8 @@
       <div>
         <h3 class="text-xs font-bold text-red-700 uppercase tracking-widest">Voter Disruption</h3>
         <p class="text-[11px] text-red-500 mt-0.5">
-          People moved beyond what was required for population equalization
-          · method: {displacement.method.replace('_', ' ')}
+          Residents counted as moved when their Plan B district number differs from Plan A
+          (same-number comparison) · method: {displacement.method.replace('_', ' ')}
         </p>
       </div>
     </div>
@@ -765,43 +848,71 @@
     <p class="text-[11px] text-red-400 mt-2 italic">
       {displacement.districtCount}-district plan · total population {fmtPop(displacement.totalPop)}
     </p>
+    <p class="text-[10px] text-red-400 mt-1 italic">
+      "Min. Required" assumes a redraw that moves only the people needed to equalize district sizes
+      (an up-to-size target). Between censuses — or for a court-ordered remedy with two competing
+      maps — the true minimum is much smaller, sometimes zero, so treat "Excess" as an upper tail,
+      not a precise measure of manipulation. Voter disruption itself (people who changed districts)
+      is independent of that caveat and is always worth reporting.
+    </p>
 
-    <!-- Population displacement matrix (sparse: only cross-district movements) -->
+    <!-- Population movement matrix: every Plan B district that receives residents -->
     {#if displacementDistricts.length > 0}
       {@const movers = displacementDistricts
-        .filter(d => d.districtIdA !== d.districtIdB && d.displacedFromA > 0)
+        .filter(d => d.displacedFromA > 0)
         .sort((a, b) => b.displacedFromA - a.displacedFromA)}
       {#if movers.length > 0}
-        <div class="mt-3">
+        <div class="mt-3 bg-white rounded-xl border border-red-200 p-3">
           <p class="text-xs font-semibold text-red-700 mb-2">Cross-District Population Movement</p>
+          <p class="text-[10px] text-red-400 mb-2">
+            Every destination that received residents from a displaced Plan A district is listed —
+            not just the largest overlap. A district appears even when Plan B keeps the same number
+            (e.g. old CD7 retains only 12% of its area as new CD7; 88% of its population moves).
+          </p>
           <div class="overflow-x-auto">
-            <table class="w-full text-xs border-collapse bg-white rounded-xl overflow-hidden">
+            <table class="w-full text-xs border-collapse">
               <thead>
                 <tr class="border-b border-red-200 bg-red-50">
                   <th class="px-3 py-1.5 text-left text-red-600 font-semibold">From (Plan A)</th>
-                  <th class="px-3 py-1.5 text-left text-red-600 font-semibold">Dominant Match (Plan B)</th>
-                  <th class="px-3 py-1.5 text-right text-red-600 font-semibold">People Displaced</th>
+                  <th class="px-3 py-1.5 text-left text-red-600 font-semibold">Moved to (Plan B)</th>
+                  <th class="px-3 py-1.5 text-right text-red-600 font-semibold">People</th>
                   <th class="px-3 py-1.5 text-right text-red-600 font-semibold">% of District</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-red-100">
                 {#each movers as m}
-                  <tr class="hover:bg-red-50">
-                    <td class="px-3 py-1.5 font-semibold text-gray-800">D{m.districtIdA}</td>
-                    <td class="px-3 py-1.5 text-gray-600">D{m.districtIdB}</td>
-                    <td class="px-3 py-1.5 text-right font-mono tabular-nums">{fmtPop(m.displacedFromA)}</td>
-                    <td class="px-3 py-1.5 text-right font-mono tabular-nums {m.displacedPct > 0.3 ? 'text-red-600 font-bold' : 'text-gray-600'}">
-                      {(m.displacedPct * 100).toFixed(1)}%
-                    </td>
-                  </tr>
+                  {@const dests = m.movedTo.filter(t => t.districtIdB !== m.districtIdA && t.pop > 0)}
+                  {#if dests.length > 0}
+                    {#each dests as dest, di}
+                      <tr class="hover:bg-red-50">
+                        {#if di === 0}
+                          <td
+                            rowspan={dests.length}
+                            class="px-3 py-1.5 font-semibold text-gray-800 align-top">D{m.districtIdA}</td>
+                        {/if}
+                        <td class="px-3 py-1.5 text-gray-600">D{dest.districtIdB}</td>
+                        <td class="px-3 py-1.5 text-right font-mono tabular-nums">{fmtPop(dest.pop)}</td>
+                        <td class="px-3 py-1.5 text-right font-mono tabular-nums text-gray-500">
+                          {(dest.pct * 100).toFixed(1)}%
+                        </td>
+                      </tr>
+                    {/each}
+                  {:else}
+                    {#if m.displacedPct > 0}
+                      <tr class="hover:bg-red-50">
+                        <td class="px-3 py-1.5 font-semibold text-gray-800">D{m.districtIdA}</td>
+                        <td class="px-3 py-1.5 text-gray-600 italic">— (no resolvable destination)</td>
+                        <td class="px-3 py-1.5 text-right font-mono tabular-nums">{fmtPop(m.displacedFromA)}</td>
+                        <td class="px-3 py-1.5 text-right font-mono tabular-nums text-gray-500">
+                          {(m.displacedPct * 100).toFixed(1)}%
+                        </td>
+                      </tr>
+                    {/if}
+                  {/if}
                 {/each}
               </tbody>
             </table>
           </div>
-          <p class="text-[10px] text-red-400 mt-1.5 italic">
-            Dominant-match method: each Plan A district is matched to the Plan B district with the largest geographic overlap.
-            Districts not shown here were matched to their same-numbered counterpart.
-          </p>
         </div>
       {/if}
     {/if}
@@ -887,52 +998,48 @@
     </div>
   </section>
 
-  <!-- ── VRA Threshold Analysis (R script 4 / script 8 equivalents) ── -->
+  <!-- ── Threshold Analysis (R script 4 / script 8 equivalents) ── -->
   <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:overflow-visible">
     <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
-      <h3 class="text-sm font-semibold text-gray-800">VRA Threshold Analysis</h3>
+      <h3 class="text-sm font-semibold text-gray-800">Threshold Analysis</h3>
       <p class="text-[11px] text-gray-400 mt-0.5">
-        District counts by demographic and partisan thresholds. Majority ≥50%, Influence 37%–50%.
+        Two perspectives: how competitive and partisan the districts are, and how the districts
+        land on demographic (VRA) thresholds. Majority ≥50%, Influence 37%–50%.
       </p>
     </div>
-    <div class="p-5 space-y-4">
-      <!-- Threshold table -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs border-collapse">
-          <thead>
-            <tr class="border-b border-gray-200 bg-gray-50">
-              <th class="px-3 py-2 text-left text-gray-600 font-semibold">Category</th>
-              <th class="px-3 py-2 text-center text-blue-600 font-semibold">Plan A</th>
-              <th class="px-3 py-2 text-center text-amber-600 font-semibold">Plan B</th>
-              <th class="px-3 py-2 text-center text-gray-400 font-semibold">Δ</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            {#each [
-              { label: 'Competitive Districts (46.5%–53.5% Dem)', a: threshA.competitive,   b: threshB.competitive },
-              { label: 'Democratic Districts (≥50% Dem)',         a: threshA.demDistricts,  b: threshB.demDistricts },
-              { label: 'Republican Districts (<50% Dem)',         a: threshA.repDistricts,  b: threshB.repDistricts },
-              { label: '─ BVAP Majority (≥50%)',                  a: threshA.bvapMaj,       b: threshB.bvapMaj },
-              { label: '─ BVAP Influence (37%–50%)',              a: threshA.bvapInf,       b: threshB.bvapInf },
-              { label: '─ MVAP Majority (≥50%)',                  a: threshA.mvapMaj,       b: threshB.mvapMaj },
-              { label: '─ MVAP Influence (37%–50%)',              a: threshA.mvapInf,       b: threshB.mvapInf },
-              { label: '─ HVAP Majority (≥50%)',                  a: threshA.hvapMaj,       b: threshB.hvapMaj },
-              { label: '─ HVAP Influence (37%–50%)',              a: threshA.hvapInf,       b: threshB.hvapInf },
-              { label: '─ AVAP Majority (≥50%)',                  a: threshA.avapMaj,       b: threshB.avapMaj },
-              { label: '─ AVAP Influence (37%–50%)',              a: threshA.avapInf,       b: threshB.avapInf },
-            ] as row}
-              {@const diff = row.b - row.a}
-              <tr class="hover:bg-gray-50">
-                <td class="px-3 py-1.5 text-gray-700">{row.label}</td>
-                <td class="px-3 py-1.5 text-center font-semibold text-blue-700">{row.a}</td>
-                <td class="px-3 py-1.5 text-center font-semibold text-amber-600">{row.b}</td>
-                <td class="px-3 py-1.5 text-center font-semibold {diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-600' : 'text-gray-400'}">
-                  {diff > 0 ? `+${diff}` : diff === 0 ? '—' : diff}
-                </td>
+    <div class="p-5 space-y-6">
+      <!-- Partisan lean & competitiveness -->
+      <div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Partisan Lean &amp; Competitiveness</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50">
+                <th class="px-3 py-2 text-left text-gray-600 font-semibold">Category</th>
+                <th class="px-3 py-2 text-center text-blue-600 font-semibold">Plan A</th>
+                <th class="px-3 py-2 text-center text-amber-600 font-semibold">Plan B</th>
+                <th class="px-3 py-2 text-center text-gray-400 font-semibold">Δ</th>
               </tr>
-            {/each}
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {#each [
+                { label: 'Competitive Districts (46.5%–53.5% Dem)', a: threshA.competitive,   b: threshB.competitive },
+                { label: 'Democratic Districts (≥50% Dem)',         a: threshA.demDistricts,  b: threshB.demDistricts },
+                { label: 'Republican Districts (<50% Dem)',         a: threshA.repDistricts,  b: threshB.repDistricts },
+              ] as row}
+                {@const diff = row.b - row.a}
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-1.5 text-gray-700">{row.label}</td>
+                  <td class="px-3 py-1.5 text-center font-semibold text-blue-700">{row.a}</td>
+                  <td class="px-3 py-1.5 text-center font-semibold text-amber-600">{row.b}</td>
+                  <td class="px-3 py-1.5 text-center font-semibold {diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-600' : 'text-gray-400'}">
+                    {diff > 0 ? `+${diff}` : diff === 0 ? '—' : diff}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Safety tier breakdown (R script 8 equivalent) -->
@@ -968,6 +1075,58 @@
             </tbody>
           </table>
         </div>
+        <p class="text-[10px] text-gray-400 mt-2 leading-relaxed">
+          <strong class="text-gray-500">How tiers are defined:</strong>
+          <span class="text-gray-400">Competitive</span> = race within 7 points
+          (Dem 46.5%–53.5%) · <span class="text-gray-400">Lean</span> = won by 7–20 points
+          (Dem 40%–46.5% / 53.5%–60%) · <span class="text-gray-400">Safe</span> = won by more
+          than 20 points (Dem &lt;40% / &gt;60%). Tiers are neutral — "Lean R" and "Lean D" mirror
+          each other.
+        </p>
+      </div>
+
+      <!-- Demographic threshold analysis -->
+      <div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Demographic Threshold Analysis</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50">
+                <th class="px-3 py-2 text-left text-gray-600 font-semibold">Category</th>
+                <th class="px-3 py-2 text-center text-blue-600 font-semibold">Plan A</th>
+                <th class="px-3 py-2 text-center text-amber-600 font-semibold">Plan B</th>
+                <th class="px-3 py-2 text-center text-gray-400 font-semibold">Δ</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {#each [
+                { label: 'Black VAP — Majority (≥50%)',          a: threshA.bvapMaj, b: threshB.bvapMaj },
+                { label: 'Black VAP — Influence (37%–50%)',      a: threshA.bvapInf, b: threshB.bvapInf },
+                { label: 'Minority VAP — Majority (≥50%)',       a: threshA.mvapMaj, b: threshB.mvapMaj },
+                { label: 'Minority VAP — Influence (37%–50%)',   a: threshA.mvapInf, b: threshB.mvapInf },
+                { label: 'Hispanic VAP — Majority (≥50%)',       a: threshA.hvapMaj, b: threshB.hvapMaj },
+                { label: 'Hispanic VAP — Influence (37%–50%)',   a: threshA.hvapInf, b: threshB.hvapInf },
+                { label: 'Asian VAP — Majority (≥50%)',          a: threshA.avapMaj, b: threshB.avapMaj },
+                { label: 'Asian VAP — Influence (37%–50%)',      a: threshA.avapInf, b: threshB.avapInf },
+              ] as row}
+                {@const diff = row.b - row.a}
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-1.5 text-gray-700">{row.label}</td>
+                  <td class="px-3 py-1.5 text-center font-semibold text-blue-700">{row.a}</td>
+                  <td class="px-3 py-1.5 text-center font-semibold text-amber-600">{row.b}</td>
+                  <td class="px-3 py-1.5 text-center font-semibold {diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-600' : 'text-gray-400'}">
+                    {diff > 0 ? `+${diff}` : diff === 0 ? '—' : diff}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-[10px] text-gray-400 mt-2 leading-relaxed">
+          Black VAP uses <code>pct_bvp</code> (Black alone or in combination — the standard VRA
+          measure) when available, falling back to <code>pct_bvap_al</code> (Black alone).
+          Minority VAP = all non-white VAP.
+        </p>
       </div>
     </div>
   </section>
@@ -1200,8 +1359,8 @@
         <h3 class="text-sm font-semibold text-gray-800">District-Level Comparison</h3>
         <p class="text-[11px] text-gray-400 mt-0.5">
           {sortedDeltas.length} districts · click headers to sort ·
-          <span class="text-amber-600">amber rows</span> = minority VAP shift &gt;5pp ·
-          <span class="text-violet-600 font-medium">R</span> = renumbered district (spatially matched)
+          <span class="text-violet-600 font-medium">→</span> = renumbered district ·
+          Δ columns are signed point changes (B − A)
         </p>
       </div>
       <div class="flex items-center gap-4 text-[11px] text-gray-500 flex-wrap">
@@ -1262,9 +1421,11 @@
               {#each half as d (d.districtId)}
                 {@const bvapA = d.a.vap > 0 ? (d.a.blackVap / d.a.vap) * 100 : 0}
                 {@const bvapB = d.b.vap > 0 ? (d.b.blackVap / d.b.vap) * 100 : 0}
+                {@const bvapDelta = bvapB - bvapA}
+                {@const mvapDelta = d.b.minorityVapPct - d.a.minorityVapPct}
                 {@const ppA  = compactnessA.get(d.districtId)?.polsbyPopper ?? 0}
                 {@const ppB  = compactnessB.get(d.matchedBId)?.polsbyPopper ?? 0}
-                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors {d.minorityFlagged ? 'bg-amber-50 hover:bg-amber-100' : ''}">
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <!-- District ID + renumbering badge -->
                   <td class="px-2 py-1.5 font-bold text-gray-800 whitespace-nowrap">
                     {d.districtId}
@@ -1295,13 +1456,19 @@
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums {bValClass(bvapB - bvapA)} {bvapB > 50 ? 'font-bold' : ''}">
                     {bvapB.toFixed(1)}%{arrow(bvapB - bvapA)}
                   </td>
-                  <!-- BVAP change label (R script 7 equivalent) -->
-                  <td class="px-1 py-1.5 text-[10px] whitespace-nowrap {d.bvapChangeLabel.includes('Gained') ? 'text-emerald-700 font-semibold' : d.bvapChangeLabel.includes('Lost') ? 'text-red-600 font-semibold' : 'text-gray-300'}">
-                    {d.bvapChangeLabel || '—'}
+                  <!-- BVAP change (R script 7 equivalent) -->
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums whitespace-nowrap {bValClass(bvapDelta)}">
+                    {bvapDelta >= 0 ? '+' : ''}{bvapDelta.toFixed(1)}pp
+                    {#if d.bvapChangeLabel}
+                      <div class="text-[9px] font-sans {d.bvapChangeLabel.includes('Gained') ? 'text-emerald-600' : 'text-red-600'}">{d.bvapChangeLabel}</div>
+                    {/if}
                   </td>
-                  <!-- MVAP change label (R script 7 equivalent) -->
-                  <td class="px-1 py-1.5 text-[10px] whitespace-nowrap {d.mvapChangeLabel.includes('Gained') ? 'text-emerald-700 font-semibold' : d.mvapChangeLabel.includes('Lost') ? 'text-red-600 font-semibold' : 'text-gray-300'}">
-                    {d.mvapChangeLabel || '—'}
+                  <!-- MVAP change (R script 7 equivalent) -->
+                  <td class="px-1 py-1.5 text-right font-mono tabular-nums whitespace-nowrap {bValClass(mvapDelta)}">
+                    {mvapDelta >= 0 ? '+' : ''}{mvapDelta.toFixed(1)}pp
+                    {#if d.mvapChangeLabel}
+                      <div class="text-[9px] font-sans {d.mvapChangeLabel.includes('Gained') ? 'text-emerald-600' : 'text-red-600'}">{d.mvapChangeLabel}</div>
+                    {/if}
                   </td>
                   <!-- Polsby-Popper -->
                   <td class="px-1 py-1.5 text-right font-mono tabular-nums text-blue-700">{ppA.toFixed(3)}</td>
@@ -1345,6 +1512,28 @@
       All scores are non-partisan and computed identically for both plans.
     </p>
   </section>
+
+  <!-- Off-screen SVG maps rasterized to PNG by "Map PNGs" (not printed) -->
+  <div class="fixed -left-[9999px] top-0 print:hidden" aria-hidden="true" bind:this={exportBox}>
+    <SvgMap
+      geojson={planA.geojson}
+      metrics={planA.metrics}
+      colorBy={exportColorBy}
+      deltas={deltas}
+      deltaMap={deltaMapA}
+      width={EXPORT_W}
+      height={EXPORT_H}
+    />
+    <SvgMap
+      geojson={planB.geojson}
+      metrics={planB.metrics}
+      colorBy={exportColorBy}
+      deltas={exportDeltasB}
+      deltaMap={deltaMapB}
+      width={EXPORT_W}
+      height={EXPORT_H}
+    />
+  </div>
 </div>
 
 <style>

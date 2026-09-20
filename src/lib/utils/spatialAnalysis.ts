@@ -66,21 +66,27 @@ export function spatialJoin(
 }
 
 /**
- * Build deltas using centroid-based spatial matching.
+ * How Plan A districts are paired with Plan B districts for change reporting.
  *
- * Phase 1: match same-numbered districts whose centroids are within 20 km
- *          (handles the common case where numbering is stable).
- * Phase 2: greedily match remaining A districts to the nearest unmatched B
- *          district (handles plans where some districts were renumbered).
+ *   'number'      — pair by district number (Plan A CD7 ↔ Plan B CD7).  This
+ *                   is what a casual reader expects, and it surfaces flips like
+ *                   "CD7 D→R" even when the geography moved wholesale.
+ *                   Unmatched districts (different district counts) fall back
+ *                   to the nearest unclaimed Plan B district.
  *
- * This avoids the nonsensical deltas produced by the naive ID-match approach
- * when a redistricting cycle renumbers even a handful of districts.
+ *   'geography'   — pair by centroid proximity (same-number within 20 km
+ *                   first, then greedy nearest-neighbour).  This is best for
+ *                   renumbered plans and can de-obscure which physical areas
+ *                   a boundary change affected, but it can mask flips.
  */
+export type MatchMode = 'number' | 'geography';
+
 export function buildDeltas(
   fcA: GeoJSON.FeatureCollection,
   metricsA: Map<string, DistrictMetrics>,
   fcB: GeoJSON.FeatureCollection,
-  metricsB: Map<string, DistrictMetrics>
+  metricsB: Map<string, DistrictMetrics>,
+  mode: MatchMode = 'number'
 ): DistrictDelta[] {
   // Ideal population for plan B (used for per-district deviation, R script 7 equivalent)
   const totalPopB = [...metricsB.values()].reduce((s, m) => s + m.totalPop, 0);
@@ -103,34 +109,65 @@ export function buildDeltas(
   }
   const MATCH_THRESHOLD_SQ = (20 / 111) * (20 / 111); // 20 km in degree²
 
-  const matchedB = new Set<string>();
-  const pairs: [string, string][] = [];
-
-  // Phase 1: same-number matches within threshold
-  const cBById = new Map(cB.map(c => [c.id, c]));
-  for (const a of cA) {
-    const b = cBById.get(a.id);
-    if (b && distSq(a, b) < MATCH_THRESHOLD_SQ) {
-      pairs.push([a.id, b.id]);
-      matchedB.add(b.id);
+  // Greedy nearest-neighbour: match every unclaimed A to the nearest unclaimed B.
+  function greedyFill(matchedA: Set<string>, pairs: [string, string][]) {
+    const unclaimedB = cB.filter(c => !pairs.some(([, b]) => b === c.id));
+    for (const a of cA) {
+      if (matchedA.has(a.id)) continue;
+      if (unclaimedB.length === 0) break;
+      let bestIdx = 0;
+      let bestDist = distSq(a, unclaimedB[0]);
+      for (let j = 1; j < unclaimedB.length; j++) {
+        const d = distSq(a, unclaimedB[j]);
+        if (d < bestDist) { bestDist = d; bestIdx = j; }
+      }
+      const chosen = unclaimedB[bestIdx];
+      pairs.push([a.id, chosen.id]);
+      unclaimedB.splice(bestIdx, 1);
     }
   }
-  const matchedA = new Set(pairs.map(([id]) => id));
 
-  // Phase 2: greedy nearest-neighbour for remaining A districts
-  const unclaimedB = cB.filter(c => !matchedB.has(c.id));
-  for (const a of cA) {
-    if (matchedA.has(a.id)) continue;
-    if (unclaimedB.length === 0) break;
-    let bestIdx = 0;
-    let bestDist = distSq(a, unclaimedB[0]);
-    for (let j = 1; j < unclaimedB.length; j++) {
-      const d = distSq(a, unclaimedB[j]);
-      if (d < bestDist) { bestDist = d; bestIdx = j; }
+  const pairs: [string, string][] = [];
+
+  if (mode === 'number') {
+    // Number-based: exact same-number pairs first.
+    const bById = new Map(cB.map(c => [c.id, c]));
+    const matchedA = new Set<string>();
+    for (const a of cA) {
+      if (bById.has(a.id)) {
+        pairs.push([a.id, a.id]);
+        matchedA.add(a.id);
+      }
     }
-    const chosen = unclaimedB[bestIdx];
-    pairs.push([a.id, chosen.id]);
-    unclaimedB.splice(bestIdx, 1);
+    // Districts with no same-number counterpart (e.g. different district
+    // counts between the two plans) are matched geographically.
+    greedyFill(matchedA, pairs);
+  } else {
+    // Geography-based: same-number within 20 km, then nearest-neighbour.
+    const matchedB = new Set<string>();
+    const cBById = new Map(cB.map(c => [c.id, c]));
+    for (const a of cA) {
+      const b = cBById.get(a.id);
+      if (b && distSq(a, b) < MATCH_THRESHOLD_SQ) {
+        pairs.push([a.id, b.id]);
+        matchedB.add(b.id);
+      }
+    }
+    const matchedA = new Set(pairs.map(([id]) => id));
+    const unclaimedB = cB.filter(c => !matchedB.has(c.id));
+    for (const a of cA) {
+      if (matchedA.has(a.id)) continue;
+      if (unclaimedB.length === 0) break;
+      let bestIdx = 0;
+      let bestDist = distSq(a, unclaimedB[0]);
+      for (let j = 1; j < unclaimedB.length; j++) {
+        const d = distSq(a, unclaimedB[j]);
+        if (d < bestDist) { bestDist = d; bestIdx = j; }
+      }
+      const chosen = unclaimedB[bestIdx];
+      pairs.push([a.id, chosen.id]);
+      unclaimedB.splice(bestIdx, 1);
+    }
   }
 
   return pairs.map(([idA, idB]) => {

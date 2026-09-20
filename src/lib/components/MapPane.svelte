@@ -3,12 +3,15 @@
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
   import type { DistrictMetrics, DistrictDelta, ColorByMode } from '../types';
+  import { partisanColor, minorityVapColor, popDeltaColor, popColor } from '../utils/scales';
 
   interface Props {
     geojson: GeoJSON.FeatureCollection | null;
     metrics: Map<string, DistrictMetrics> | null;
     colorBy: ColorByMode;
     label: string;
+    /** Side prefix shown in the tooltip ("A" / "B"). */
+    side?: string;
     deltaMap?: Map<string, DistrictDelta>;   // for flip/competitive_change/minority_change modes
     onMapReady?: (map: L.Map) => void;
     onHover?: (id: string | null) => void;
@@ -16,7 +19,7 @@
   }
 
   let {
-    geojson, metrics, colorBy, label,
+    geojson, metrics, colorBy, label, side = '',
     deltaMap, onMapReady, onHover, highlightedId = null
   }: Props = $props();
 
@@ -24,6 +27,9 @@
   let map: L.Map;
   let geojsonLayer = $state<L.GeoJSON | null>(null);
   const layerById = new Map<string, L.Path>();
+
+  // Population is a comparison metric: Lower/Same/Higher only when deltas exist.
+  const popCompare = $derived(colorBy === 'pop' && !!deltaMap && deltaMap.size > 0);
 
   // Custom fixed-position tooltip — rendered outside the overflow:hidden map
   // container so it never gets clipped when hovering near the map edge.
@@ -71,27 +77,13 @@
     );
   }
 
+  // Absolute population buckets — used only when a single plan is selected and
+  // there is nothing to compare.  When deltas are available, pop is colored by
+  // Lower / Same / Higher relative to Plan A instead (see style()).
   function getColor(value: number, metric: string): string {
-    if (metric === 'partisan') {
-      if (value >= 65) return '#1a4fa0';
-      if (value >= 55) return '#4c8ed9';
-      if (value >= 50) return '#93b8e8';
-      if (value >= 45) return '#e8a097';
-      if (value >= 35) return '#d94c4c';
-      return '#a01a1a';
-    }
-    if (metric === 'minority_vap') {
-      if (value >= 60) return '#5c2d91';
-      if (value >= 45) return '#8b5cf6';
-      if (value >= 30) return '#a78bfa';
-      if (value >= 15) return '#ddd6fe';
-      return '#f5f3ff';
-    }
-    if (value >= 80000) return '#14532d';
-    if (value >= 60000) return '#15803d';
-    if (value >= 40000) return '#4ade80';
-    if (value >= 20000) return '#bbf7d0';
-    return '#f0fdf4';
+    if (metric === 'partisan') return partisanColor(value);
+    if (metric === 'minority_vap') return minorityVapColor(value);
+    return popColor(value);
   }
 
   function getDeltaColor(delta: DistrictDelta | undefined, mode: string): string {
@@ -117,11 +109,11 @@
   }
 
   function buildTooltip(id: string, m: DistrictMetrics | undefined, delta?: DistrictDelta): string {
-    if (!m) return `<strong>District ${id}</strong><br><em>No data</em>`;
+    if (!m) return `<strong>${side ? side + '-' : ''}District ${id}</strong><br><em>No data</em>`;
     const bvapPct = m.vap > 0 ? (m.blackVap / m.vap) * 100 : 0;
     const sign = m.partisanLean >= 50 ? 'D' : 'R';
     const margin = Math.abs(m.partisanLean - 50).toFixed(1);
-    let base = `<strong>District ${id}</strong><br>Pop: ${m.totalPop.toLocaleString()}<br>VAP: ${m.vap.toLocaleString()}<br>Black VAP: ${bvapPct.toFixed(1)}%<br>Minority VAP: ${m.minorityVapPct.toFixed(1)}%<br>Partisan: ${sign}+${margin}%`;
+    let base = `<strong>${side ? side + '-' : ''}District ${id}</strong><br>Pop: ${m.totalPop.toLocaleString()}<br>VAP: ${m.vap.toLocaleString()}<br>Black VAP: ${bvapPct.toFixed(1)}%<br>Minority VAP: ${m.minorityVapPct.toFixed(1)}%<br>Partisan: ${sign}+${margin}%`;
     if (delta) {
       const labels = [delta.partisanFlipLabel, delta.competitiveChangeLabel, delta.bvapChangeLabel, delta.mvapChangeLabel]
         .filter(l => l !== '').join(', ');
@@ -152,9 +144,22 @@
           return { fillColor: getDeltaColor(delta, colorBy), fillOpacity: 0.8, color: '#fff', weight: 1.5 };
         }
         const m = metrics?.get(id);
-        const value =
-          colorBy === 'pop'          ? (m?.totalPop ?? 0)
-          : colorBy === 'minority_vap' ? (m?.minorityVapPct ?? 0)
+        if (colorBy === 'pop') {
+          const delta = deltaMap?.get(id);
+          // Population is only meaningful as a *comparison* (Lower/Same/Higher
+          // vs Plan A).  Absolute population buckets make everything look
+          // uniformly dark — the "all districts higher" bug.
+          if (delta) {
+            const basePop = delta.a?.totalPop ?? m?.totalPop ?? 0;
+            return {
+              fillColor: popDeltaColor(delta.deltaPop, basePop),
+              fillOpacity: 0.8, color: '#fff', weight: 1.5
+            };
+          }
+          return { fillColor: popColor(m?.totalPop ?? 0), fillOpacity: 0.7, color: '#fff', weight: 1.5 };
+        }
+        const value = colorBy === 'minority_vap'
+          ? (m?.minorityVapPct ?? 0)
           : (m?.partisanLean ?? 50);
         return { fillColor: getColor(value, colorBy), fillOpacity: 0.7, color: '#fff', weight: 1.5 };
       },
@@ -206,7 +211,53 @@
   <div class="text-xs font-semibold text-center py-1.5 px-2 bg-white border-b border-gray-200 truncate text-gray-700">
     {label}
   </div>
-  <div bind:this={mapEl} class="flex-1"></div>
+  <div class="relative flex-1 min-h-0">
+    <div bind:this={mapEl} class="absolute inset-0"></div>
+
+    <!-- Legend overlay — lives with the map so preview and report can never drift -->
+    <div class="absolute top-2 right-2 z-[500] pointer-events-none bg-white/95 border border-gray-200 rounded-lg shadow-sm px-2.5 py-2 text-[10px] leading-tight text-gray-700 max-h-[85%] overflow-y-auto">
+      <p class="font-semibold text-gray-500 mb-1">
+        {colorBy === 'partisan' ? 'Partisan Lean' : colorBy === 'minority_vap' ? 'Minority VAP' : colorBy === 'pop' ? (popCompare ? 'Population change' : 'Population') : 'Change'}
+      </p>
+      {#if colorBy === 'partisan'}
+        {#each [
+          ['Safe R', '#bc131e'], ['Lean R', '#eb4956'], ['Competitive R', '#c36e9e'],
+          ['Competitive D', '#7279db'], ['Lean D', '#3c6ebf'], ['Safe D', '#1f4bae']
+        ] as [t, c]}
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:{c}"></span>{t}</div>
+        {/each}
+      {:else if colorBy === 'minority_vap'}
+        {#each [
+          ['≥50% Majority', '#5c2d91'], ['37–50% Influence', '#8b5cf6'], ['25–37%', '#a78bfa'],
+          ['15–25%', '#ddd6fe'], ['<15%', '#f5f3ff']
+        ] as [t, c]}
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:{c}"></span>{t}</div>
+        {/each}
+      {:else if colorBy === 'pop'}
+        {#if popCompare}
+          {#each [['Higher', '#14532d'], ['Same (±0.5%)', '#e5e7eb'], ['Lower', '#bbf7d0']] as [t, c]}
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:{c}"></span>{t}</div>
+          {/each}
+        {:else}
+          {#each [['≥80K', '#14532d'], ['60–80K', '#15803d'], ['40–60K', '#4ade80'], ['20–40K', '#bbf7d0'], ['<20K', '#f0fdf4']] as [t, c]}
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:{c}"></span>{t}</div>
+          {/each}
+        {/if}
+      {:else if colorBy === 'flip'}
+        {#each [['Gained Dem', '#2563eb'], ['Lost Dem', '#dc2626'], ['Unchanged', '#d1d5db']] as [t, c]}
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:{c}"></span>{t}</div>
+        {/each}
+      {:else if colorBy === 'competitive_change'}
+        {#each [['Gained Competitive', '#16a34a'], ['Lost Competitive', '#f97316'], ['Unchanged', '#d1d5db']] as [t, c]}
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:{c}"></span>{t}</div>
+        {/each}
+      {:else if colorBy === 'minority_change'}
+        {#each [['Gained Minority VAP', '#7c3aed'], ['Lost Minority VAP', '#d97706'], ['Unchanged', '#d1d5db']] as [t, c]}
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:{c}"></span>{t}</div>
+        {/each}
+      {/if}
+    </div>
+  </div>
 </div>
 
 {#if tipVisible}

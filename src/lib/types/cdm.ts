@@ -67,11 +67,20 @@ export interface DisplacementMetrics {
   method: DisplacementMethod;
 }
 
+export interface MoverDestination {
+  districtIdB: string;
+  pop: number;
+  pct: number;
+}
+
 export interface DistrictDisplacement {
   districtIdA: string;
   /** Dominant Plan B district (largest area overlap). */
   districtIdB: string;
   popA: number;
+  /** People whose Plan B district differs from Plan A (left the district). */
   displacedFromA: number;
   displacedPct: number;
+  /** Every Plan B district that received people from this Plan A district. */
+  movedTo: MoverDestination[];
 }

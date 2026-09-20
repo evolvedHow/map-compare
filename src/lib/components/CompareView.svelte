@@ -49,7 +49,11 @@
   let countySplitsB = $state<number | null>(null);
   let displacement = $state<DisplacementMetrics | null>(null);
   let displacementDistricts = $state<DistrictDisplacement[]>([]);
-  let bothCached = $state(false); // true when both selected plans have cached results
+
+  // How Plan A districts are paired with Plan B districts.  Defaults to
+  // Number matching so flips like "CD7 D→R" are visible even when the
+  // geography moved wholesale.  Toggle below the map preview / in the header.
+  let matchMode = $state<'number' | 'geography'>('number');
 
   const geoCache = new Map<string, GeoJSON.FeatureCollection>();
   let openSections = $state(new Set<string>(['congress', 'senate', 'house']));
@@ -81,16 +85,6 @@
   $effect(() => {
     document.body.style.cursor = reportGenerating ? 'wait' : '';
     return () => { document.body.style.cursor = ''; };
-  });
-
-  // Check IDB cache whenever plan selection changes
-  $effect(() => {
-    const a = planA?.entry.filename;
-    const b = planB?.entry.filename;
-    if (!a || !b) { bothCached = false; return; }
-    Promise.all([getPlanCache(a), getPlanCache(b)])
-      .then(([ca, cb]) => { bothCached = !!(ca && cb); })
-      .catch(() => { bothCached = false; });
   });
 
   let mapA: L.Map | null = null;
@@ -287,9 +281,14 @@
 
   const deltas = $derived(
     planA && planB
-      ? buildDeltas(planA.geojson, planA.metrics, planB.geojson, planB.metrics)
+      ? buildDeltas(planA.geojson, planA.metrics, planB.geojson, planB.metrics, matchMode)
       : []
   );
+
+  // DistrictId-side delta lookups for the two Leaflet maps.
+  // deltaMapA keys by Plan A district id; deltaMapB by matched Plan B id.
+  const deltaMapA = $derived(new Map(deltas.map(d => [d.districtId, d])));
+  const deltaMapB = $derived(new Map(deltas.map(d => [d.matchedBId, d])));
 
   const fairnessA = $derived(planA ? computeFairness([...planA.metrics.values()]) : null);
   const fairnessB = $derived(planB ? computeFairness([...planB.metrics.values()]) : null);
@@ -504,6 +503,33 @@
           ← Back to quick view
         </button>
       {/if}
+
+      {#if planA && planB}
+        <div class="flex flex-col items-end gap-0.5 ml-auto" title="How Plan A districts are paired with Plan B districts for change reporting">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] uppercase tracking-wide text-gray-400 font-bold">Match by</span>
+            <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onclick={() => (matchMode = 'number')}
+                class={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${matchMode === 'number' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                Number
+              </button>
+              <button
+                onclick={() => (matchMode = 'geography')}
+                class={`px-2.5 py-1 text-[11px] font-semibold transition-colors border-l border-gray-200 ${matchMode === 'geography' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                Geography
+              </button>
+            </div>
+          </div>
+          <p class="text-[9px] text-gray-400 max-w-[260px] text-right leading-tight hidden md:block">
+            {matchMode === 'number'
+              ? 'Pairs by district number — surfaces flips like CD7 D→R even when the geography moved.'
+              : 'Pairs by geographic location — good for renumbered plans, but can mask flips.'}
+          </p>
+        </div>
+      {/if}
     </div>
 
 
@@ -583,6 +609,8 @@
                   metrics={planA?.metrics ?? null}
                   {colorBy}
                   label={planA?.entry.label ?? 'Plan A'}
+                  side="A"
+                  deltaMap={deltaMapA}
                   onMapReady={onMapAReady}
                   onHover={(id) => (previewHoverA = id)}
                   highlightedId={previewHlA}
@@ -596,6 +624,8 @@
                   metrics={planB?.metrics ?? null}
                   {colorBy}
                   label={planB?.entry.label ?? 'Plan B'}
+                  side="B"
+                  deltaMap={deltaMapB}
                   onMapReady={onMapBReady}
                   onHover={(id) => (previewHoverB = id)}
                   highlightedId={previewHlB}
@@ -711,13 +741,6 @@
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Computing…
-                  </span>
-                {:else if bothCached}
-                  <span class="flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    Load from Cache →
                   </span>
                 {:else}
                   Generate Report →

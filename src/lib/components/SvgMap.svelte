@@ -1,12 +1,19 @@
 <script lang="ts">
   import type { DistrictMetrics, DistrictDelta } from '../types';
   import { districtId } from '../utils/spatialAnalysis';
+  import {
+    partisanColor, minorityVapColor, popColor, popDeltaColor,
+    changeShade, CHANGE_COLORS
+  } from '../utils/scales';
 
   interface Props {
     geojson: GeoJSON.FeatureCollection;
     metrics: Map<string, DistrictMetrics>;
     colorBy: 'partisan' | 'minority_vap' | 'pop' | 'delta';
     deltas?: DistrictDelta[];
+    /** Per-district comparison deltas. When present, Population renders
+     *  Higher / Same / Lower relative to Plan A (matches the Leaflet maps). */
+    deltaMap?: Map<string, DistrictDelta>;
     width?: number;
     height?: number;
     label?: string;
@@ -17,6 +24,7 @@
     metrics,
     colorBy,
     deltas = [],
+    deltaMap,
     width = 420,
     height = 290,
     label = ''
@@ -92,39 +100,25 @@
   function districtFill(id: string): string {
     if (colorBy === 'delta') {
       const d = deltas.find(x => x.districtId === id);
-      if (!d) return '#e5e7eb';
-      const v = d.deltaPartisanLean;
-      if (v > 10)  return '#1d4ed8';
-      if (v > 5)   return '#93c5fd';
-      if (v < -10) return '#b91c1c';
-      if (v < -5)  return '#fca5a5';
-      return '#d1d5db';
+      if (!d) return CHANGE_COLORS.stable;
+      // Same predicate as the "Shifted >5pp" count: partisan lean OR minority
+      // VAP moved more than 5 points.  Minority-only shifts render amber so
+      // the map can never show fewer districts highlighted than the count.
+      const s = changeShade(d.deltaPartisanLean, d.deltaMinorityVapPct);
+      if (s.stable)  return CHANGE_COLORS.stable;
+      if (s.vraOnly) return CHANGE_COLORS.vraOnly;
+      return CHANGE_COLORS[s.partisan];
     }
     const m = metrics.get(id);
     if (!m) return '#e5e7eb';
-    if (colorBy === 'partisan') {
-      const v = m.partisanLean;
-      if (v >= 65) return '#1a4fa0';
-      if (v >= 55) return '#4c8ed9';
-      if (v >= 50) return '#93b8e8';
-      if (v >= 45) return '#e8a097';
-      if (v >= 35) return '#d94c4c';
-      return '#a01a1a';
+    if (colorBy === 'partisan')     return partisanColor(m.partisanLean);
+    if (colorBy === 'minority_vap') return minorityVapColor(m.minorityVapPct);
+    const delta = deltaMap?.get(id);
+    if (delta) {
+      const basePop = delta.a?.totalPop ?? m.totalPop;
+      return popDeltaColor(delta.deltaPop, basePop);
     }
-    if (colorBy === 'minority_vap') {
-      const v = m.minorityVapPct;
-      if (v >= 60) return '#5c2d91';
-      if (v >= 45) return '#8b5cf6';
-      if (v >= 30) return '#a78bfa';
-      if (v >= 15) return '#ddd6fe';
-      return '#f5f3ff';
-    }
-    const v = m.totalPop;
-    if (v >= 80000) return '#14532d';
-    if (v >= 60000) return '#15803d';
-    if (v >= 40000) return '#4ade80';
-    if (v >= 20000) return '#bbf7d0';
-    return '#f0fdf4';
+    return popColor(m.totalPop);
   }
 
   const paths = $derived.by(() => {
