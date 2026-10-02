@@ -4,6 +4,7 @@
     "label": "Current US Congress, for 2024 elections",
     "chamber": "congress",
     "year": 2024,
+    "enacted_year": 2024,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The US Congressional map currently in effect in Georgia, enacted by the General Assembly in December 2023 after the federal court ruling in Alpha Phi Alpha v. Raffensperger and used for the 2024 elections."
@@ -12,7 +13,8 @@
     "filename": "congress_enacted_2123_2024update.geojson",
     "label": "US Congress, 2021 - 2024",
     "chamber": "congress",
-    "year": 2023,
+    "year": 2024,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The Congressional map enacted by the Georgia General Assembly in 2021 and used for the 2022 elections; struck down in October 2023 as violating Section 2 of the Voting Rights Act."
@@ -21,7 +23,8 @@
     "filename": "congress12_census20.geojson",
     "label": "US Congress, 2011-2021",
     "chamber": "congress",
-    "year": 2012,
+    "year": 2020,
+    "enacted_year": 2012,
     "provenance": "Georgia General Assembly",
     "tags": ["2020-census"],
     "description": "The Congressional map enacted after the 2010 census and in effect from 2012 through 2020, re-scored here against 2020 census demographics for comparison."
@@ -94,6 +97,7 @@
     "label": "US Congress, enacted 2022 (original)",
     "chamber": "congress",
     "year": 2022,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted"],
     "description": "The originally-enacted 2021 Congressional map as used in the 2022 elections, prior to the 2024 legislative update that lightly refreshed metadata."
@@ -104,6 +108,7 @@
     "label": "Current State Senate, for 2024 elections",
     "chamber": "senate",
     "year": 2024,
+    "enacted_year": 2024,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The State Senate map currently in effect in Georgia, enacted by the General Assembly in December 2023 after the federal court ruling in Alpha Phi Alpha v. Raffensperger and used for the 2024 elections."
@@ -112,7 +117,8 @@
     "filename": "senate_enacted_2123_2024update.geojson",
     "label": "State Senate, 2021 - 2024",
     "chamber": "senate",
-    "year": 2023,
+    "year": 2024,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The State Senate map enacted by the Georgia General Assembly in 2021 and used for the 2022 elections; superseded in 2023 following the Voting Rights Act ruling."
@@ -121,7 +127,8 @@
     "filename": "senate14_census20.geojson",
     "label": "State Senate, 2014-2021",
     "chamber": "senate",
-    "year": 2014,
+    "year": 2020,
+    "enacted_year": 2014,
     "provenance": "Georgia General Assembly",
     "tags": ["2020-census"],
     "description": "The State Senate map enacted after the 2010 census and in effect from 2014 through 2020, re-scored here against 2020 census demographics for comparison."
@@ -194,6 +201,7 @@
     "label": "State Senate, enacted 2022 (original)",
     "chamber": "senate",
     "year": 2022,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted"],
     "description": "The originally-enacted 2021 State Senate map as used in the 2022 elections, prior to the 2024 legislative update."
@@ -203,6 +211,7 @@
     "label": "State Senate, enacted 2022 (2024 update)",
     "chamber": "senate",
     "year": 2024,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The 2022-enacted State Senate map with the 2024 legislative metadata refresh, used as a baseline for comparison against the current 2024 map."
@@ -213,6 +222,7 @@
     "label": "Current State House, for 2024 elections",
     "chamber": "house",
     "year": 2024,
+    "enacted_year": 2024,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The State House map currently in effect in Georgia, enacted by the General Assembly in December 2023 after the federal court ruling in Alpha Phi Alpha v. Raffensperger and used for the 2024 elections."
@@ -221,7 +231,8 @@
     "filename": "house_enacted_2123_2024update.geojson",
     "label": "State House, 2021 - 2024",
     "chamber": "house",
-    "year": 2023,
+    "year": 2024,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The State House map enacted by the Georgia General Assembly in 2021 and used for the 2022 elections; superseded in 2023 following the Voting Rights Act ruling."
@@ -230,7 +241,8 @@
     "filename": "house15_census20.geojson",
     "label": "State House, 2015-2021",
     "chamber": "house",
-    "year": 2015,
+    "year": 2020,
+    "enacted_year": 2015,
     "provenance": "Georgia General Assembly",
     "tags": ["2020-census"],
     "description": "The State House map enacted after the 2010 census and in effect from 2015 through 2020, re-scored here against 2020 census demographics for comparison."
@@ -294,6 +306,7 @@
     "label": "State House, enacted 2022 (original)",
     "chamber": "house",
     "year": 2022,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted"],
     "description": "The originally-enacted 2021 State House map as used in the 2022 elections, prior to the 2024 legislative update."
@@ -303,6 +316,7 @@
     "label": "State House, enacted 2022 (2024 update)",
     "chamber": "house",
     "year": 2024,
+    "enacted_year": 2021,
     "provenance": "Georgia General Assembly",
     "tags": ["enacted", "2024-update"],
     "description": "The 2022-enacted State House map with the 2024 legislative metadata refresh, used as a baseline for comparison against the current 2024 map."

@@ -732,8 +732,8 @@
     <div class="px-5 py-2 border-t border-gray-100 flex items-center gap-5 text-[11px] text-gray-500 bg-gray-50 flex-wrap">
       {#if effectiveColorBy === 'partisan'}
         {#each [
-          ['Safe R', '#bc131e'], ['Lean R', '#eb4956'], ['Competitive R', '#c36e9e'],
-          ['Competitive D', '#7279db'], ['Lean D', '#3c6ebf'], ['Safe D', '#1f4bae']
+          ['Safe R (<40%)', '#bc131e'], ['Lean R (40-45%)', '#eb4956'], ['Competitive R (45-50%)', '#c36e9e'],
+          ['Competitive D (50-55%)', '#7279db'], ['Lean D (55-60%)', '#3c6ebf'], ['Safe D (>60%)', '#1f4bae']
         ] as [t, c]}
           <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm shrink-0" style="background:{c}"></span>{t}</span>
         {/each}
@@ -1521,7 +1521,7 @@
       <strong>Polsby-Popper</strong> compactness: 4π·A/P² computed from geodesic area and perimeter using Turf.js.
       <strong>Convex hull ratio</strong>: feature area divided by convex hull area; higher values indicate fewer irregular notches.
       <strong>Efficiency gap</strong>: (wasted Dem votes − wasted Rep votes) / total votes, where wasted = losing votes + winning votes above bare majority.
-      Partisan lean derived from the composite <em>partisan</em> field in the source GeoJSON (blend of 2018–2022 election cycles).
+      Partisan lean derived from the composite <em>partisan</em> field in the source GeoJSON (blend of 2018–2024 election cycles).
       County splits count counties with district lines crossing their boundaries.
       All scores are non-partisan and computed identically for both plans.
     </p>

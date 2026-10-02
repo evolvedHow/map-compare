@@ -22,6 +22,7 @@
     label: string;
     chamber: 'senate' | 'house' | 'congress' | 'custom';
     year: number;
+    enacted_year?: number;
     provenance: string;
     tags: string[];
     description?: string;
@@ -481,7 +482,12 @@
                 <div class="min-w-0 flex-1">
                   <p class="text-xs leading-snug break-words {isA || isB ? 'font-semibold text-gray-900' : 'text-gray-700'}">{entry.label}</p>
                   <div class="flex items-center gap-1 mt-0.5 flex-wrap">
-                    <span class="text-[10px] text-gray-400">{entry.year}</span>
+                    <span class="text-[10px] text-gray-400">
+                      {entry.enacted_year ? `enacted ${entry.enacted_year}` : entry.year}
+                      {#if entry.tags.includes('2024-update')}
+                        <span class="text-gray-300">·</span> data: {entry.year}
+                      {/if}
+                    </span>
                     {#if entry.tags.includes('enacted')}
                       <span class="text-[10px] bg-emerald-100 text-emerald-700 px-1 rounded-sm font-medium">enacted</span>
                     {/if}
