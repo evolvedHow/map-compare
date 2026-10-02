@@ -198,8 +198,10 @@ export function computeDisplacementCentroid(
 // ---------------------------------------------------------------------------
 
 /**
- * Compute displacement, automatically choosing the method based on plan size.
- * ≤20 districts → area_weighted; >20 → centroid (with option to override).
+ * Compute displacement using area-weighted intersection.
+ * 
+ * Note: Always uses area_weighted method regardless of district count.
+ * The centroid method is deprecated (binary 0%/100%, single destination).
  */
 export function computeDisplacement(
   planA: GeoJSON.FeatureCollection,
@@ -208,7 +210,9 @@ export function computeDisplacement(
   planBId = 'plan_b',
   forceMethod?: 'area_weighted' | 'centroid',
 ): { summary: DisplacementMetrics; districts: DistrictDisplacement[] } {
-  const method = forceMethod ?? (planA.features.length <= 20 ? 'area_weighted' : 'centroid');
+  // Always use area_weighted for accurate displacement with full movement matrix
+  // Centroid method is kept for backwards compatibility but not recommended
+  const method = forceMethod ?? 'area_weighted';
   return method === 'area_weighted'
     ? computeDisplacementAreaWeighted(planA, planB, planAId, planBId)
     : computeDisplacementCentroid(planA, planB, planAId, planBId);

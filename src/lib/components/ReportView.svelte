@@ -74,9 +74,17 @@
   const nFlips        = $derived(deltas.filter(d => d.partisanFlipLabel !== '').length);
   const nCompChange   = $derived(deltas.filter(d => d.competitiveChangeLabel !== '').length);
   const nVraChange    = $derived(deltas.filter(d => d.bvapChangeLabel !== '' || d.mvapChangeLabel !== '').length);
-  const nSigChange    = $derived(deltas.filter(d =>
-    Math.abs(d.deltaPartisanLean) > 5 || Math.abs(d.deltaMinorityVapPct) > 5
-  ).length);
+  
+  // District is "changed" if:
+  // 1. Significant metric change (>5 points partisan lean or minority VAP%), OR
+  // 2. Boundary change (>5% of population displaced from original district)
+  const nSigChange    = $derived(deltas.filter(d => {
+    const metricChange = Math.abs(d.deltaPartisanLean) > 5 || Math.abs(d.deltaMinorityVapPct) > 5;
+    const boundaryChange = displacementDistricts.some(
+      dd => dd.districtIdA === d.districtId && dd.displacedPct > 0.05
+    );
+    return metricChange || boundaryChange;
+  }).length);
 
   // ── Derived summary stats ────────────────────────────────────────────────
 
@@ -290,7 +298,13 @@
   // ── Changed districts spotlight ──────────────────────────────────────────
   const changedDeltas = $derived(
     deltas
-      .filter(d => Math.abs(d.deltaPartisanLean) > 5 || Math.abs(d.deltaMinorityVapPct) > 5)
+      .filter(d => {
+        const metricChange = Math.abs(d.deltaPartisanLean) > 5 || Math.abs(d.deltaMinorityVapPct) > 5;
+        const boundaryChange = displacementDistricts.some(
+          dd => dd.districtIdA === d.districtId && dd.displacedPct > 0.05
+        );
+        return metricChange || boundaryChange;
+      })
       .sort((a, b) => Math.abs(b.deltaPartisanLean) - Math.abs(a.deltaPartisanLean))
   );
 

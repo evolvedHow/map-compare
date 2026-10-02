@@ -17,6 +17,7 @@
   import { getPlanCache, savePlanCache } from '../utils/db';
 
   interface CatalogEntry {
+    id?: string;
     filename: string;
     label: string;
     chamber: 'senate' | 'house' | 'congress' | 'custom';
@@ -30,6 +31,67 @@
     entry: CatalogEntry;
     geojson: GeoJSON.FeatureCollection;
     metrics: Map<string, DistrictMetrics>;
+  }
+
+  /**
+   * Fetch pre-computed displacement from server artifacts.
+   * Returns null if not found (app will fall back to browser computation).
+   */
+  async function fetchDisplacementFromServer(
+    planAId: string,
+    planBId: string
+  ): Promise<{ summary: DisplacementMetrics; districts: DistrictDisplacement[] } | null> {
+    // Try common pair patterns
+    const pairPatterns = [
+      `${planAId}_to_${planBId}`,
+      `${planAId.replace(/_2024update$/, '')}_to_${planBId.replace(/_2024update$/, '')}`,
+      // Handle enacted transitions specifically
+      ...(planAId.includes('enacted_2123') && planBId.includes('enacted_24') 
+        ? [planAId.split('_')[0] + '_2123_to_24'] 
+        : []),
+    ];
+
+    for (const pairId of pairPatterns) {
+      try {
+        const url = `${import.meta.env.BASE_URL}data/displacement/${pairId}.json`;
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const data = await resp.json();
+          // Transform snake_case JSON to camelCase TypeScript
+          return {
+            summary: {
+              planAId: data.summary.plan_a_id,
+              planBId: data.summary.plan_b_id,
+              totalPop: data.summary.total_pop,
+              displacedPop: data.summary.displaced_pop,
+              displacedPct: data.summary.displaced_pct,
+              minRequiredDisplacedPop: data.summary.min_required_displaced_pop,
+              minRequiredDisplacedPct: data.summary.min_required_displaced_pct,
+              excessDisplacedPop: data.summary.excess_displaced_pop,
+              excessDisplacedPct: data.summary.excess_displaced_pct,
+              districtCount: data.summary.district_count,
+              method: data.summary.method,
+            },
+            districts: data.districts.map((d: any) => ({
+              districtIdA: d.district_id_a,
+              districtIdB: d.district_id_b,
+              popA: d.pop_a,
+              displacedFromA: d.displaced_from_a,
+              displacedPct: d.displaced_pct,
+              movedTo: d.moved_to.map((m: any) => ({
+                districtIdB: m.district_id_b,
+                pop: m.pop_moved,
+                pct: m.pct_of_district_a,
+              })),
+            })),
+          };
+        }
+      } catch {
+        // Continue to next pattern
+      }
+    }
+
+    return null;
   }
 
   let catalog = $state<CatalogEntry[]>([]);
@@ -212,16 +274,26 @@
       compactnessB = computeCompactness(planB.geojson);
     }
 
-    // Displacement metric — runs after compactness so it doesn't block the report render
+    // Displacement metric — fetch from server if available, else compute in browser
     displacement = null;
     displacementDistricts = [];
     try {
-      const { summary, districts } = computeDisplacement(
-        planA.geojson, planB.geojson,
-        planA.entry.filename, planB.entry.filename,
-      );
-      displacement = summary;
-      displacementDistricts = districts;
+      const planAId = planA.entry.id || planA.entry.filename.replace('.geojson', '');
+      const planBId = planB.entry.id || planB.entry.filename.replace('.geojson', '');
+      
+      const serverData = await fetchDisplacementFromServer(planAId, planBId);
+      if (serverData) {
+        displacement = serverData.summary;
+        displacementDistricts = serverData.districts;
+      } else {
+        // Fallback to browser computation
+        const { summary, districts } = computeDisplacement(
+          planA.geojson, planB.geojson,
+          planA.entry.filename, planB.entry.filename,
+        );
+        displacement = { ...summary, method: 'browser_fallback' };
+        displacementDistricts = districts;
+      }
     } catch {
       displacement = null;
       displacementDistricts = [];

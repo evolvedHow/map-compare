@@ -1,0 +1,1389 @@
+{
+  "pair_id": "senate_14_to_22",
+  "label": "GA Senate 2014 \u2192 2022 Enacted",
+  "summary": {
+    "plan_a_id": "senate14_census20",
+    "plan_b_id": "enacted_senate22",
+    "total_pop": 10711908,
+    "displaced_pop": 2078399,
+    "displaced_pct": 0.194027,
+    "min_required_displaced_pop": 312973,
+    "min_required_displaced_pct": 0.029217,
+    "excess_displaced_pop": 1765426,
+    "excess_displaced_pct": 0.16481,
+    "district_count": 56,
+    "method": "area_weighted",
+    "computed_at": "2026-10-02T17:26:06.279219+00:00"
+  },
+  "districts": [
+    {
+      "district_id_a": "41",
+      "district_id_b": "41",
+      "pop_a": 196140,
+      "displaced_from_a": 58150,
+      "displaced_pct": 0.296472,
+      "moved_to": [
+        {
+          "district_id_b": "41",
+          "pop_moved": 137990,
+          "pct_of_district_a": 0.703528
+        },
+        {
+          "district_id_b": "9",
+          "pop_moved": 44865,
+          "pct_of_district_a": 0.228742
+        },
+        {
+          "district_id_b": "55",
+          "pop_moved": 7085,
+          "pct_of_district_a": 0.036122
+        },
+        {
+          "district_id_b": "42",
+          "pop_moved": 3415,
+          "pct_of_district_a": 0.017413
+        },
+        {
+          "district_id_b": "5",
+          "pop_moved": 2784,
+          "pct_of_district_a": 0.014195
+        }
+      ]
+    },
+    {
+      "district_id_a": "39",
+      "district_id_b": "39",
+      "pop_a": 205632,
+      "displaced_from_a": 30176,
+      "displaced_pct": 0.146748,
+      "moved_to": [
+        {
+          "district_id_b": "39",
+          "pop_moved": 175456,
+          "pct_of_district_a": 0.853252
+        },
+        {
+          "district_id_b": "38",
+          "pop_moved": 17819,
+          "pct_of_district_a": 0.086654
+        },
+        {
+          "district_id_b": "6",
+          "pop_moved": 9121,
+          "pct_of_district_a": 0.044357
+        },
+        {
+          "district_id_b": "36",
+          "pop_moved": 2161,
+          "pct_of_district_a": 0.010509
+        },
+        {
+          "district_id_b": "35",
+          "pop_moved": 1069,
+          "pct_of_district_a": 0.005199
+        }
+      ]
+    },
+    {
+      "district_id_a": "11",
+      "district_id_b": "11",
+      "pop_a": 176167,
+      "displaced_from_a": 58764,
+      "displaced_pct": 0.33357,
+      "moved_to": [
+        {
+          "district_id_b": "11",
+          "pop_moved": 117403,
+          "pct_of_district_a": 0.666431
+        },
+        {
+          "district_id_b": "12",
+          "pop_moved": 58764,
+          "pct_of_district_a": 0.333569
+        }
+      ]
+    },
+    {
+      "district_id_a": "32",
+      "district_id_b": "56",
+      "pop_a": 191820,
+      "displaced_from_a": 102633,
+      "displaced_pct": 0.535048,
+      "moved_to": [
+        {
+          "district_id_b": "56",
+          "pop_moved": 89187,
+          "pct_of_district_a": 0.464952
+        },
+        {
+          "district_id_b": "6",
+          "pop_moved": 49775,
+          "pct_of_district_a": 0.259488
+        },
+        {
+          "district_id_b": "32",
+          "pop_moved": 41369,
+          "pct_of_district_a": 0.215663
+        },
+        {
+          "district_id_b": "14",
+          "pop_moved": 11489,
+          "pct_of_district_a": 0.059893
+        }
+      ]
+    },
+    {
+      "district_id_a": "18",
+      "district_id_b": "18",
+      "pop_a": 181317,
+      "displaced_from_a": 3002,
+      "displaced_pct": 0.016554,
+      "moved_to": [
+        {
+          "district_id_b": "18",
+          "pop_moved": 178315,
+          "pct_of_district_a": 0.983446
+        },
+        {
+          "district_id_b": "26",
+          "pop_moved": 2512,
+          "pct_of_district_a": 0.013852
+        },
+        {
+          "district_id_b": "25",
+          "pop_moved": 489,
+          "pct_of_district_a": 0.002696
+        }
+      ]
+    },
+    {
+      "district_id_a": "3",
+      "district_id_b": "3",
+      "pop_a": 177449,
+      "displaced_from_a": 1,
+      "displaced_pct": 6e-06,
+      "moved_to": [
+        {
+          "district_id_b": "3",
+          "pop_moved": 177448,
+          "pct_of_district_a": 0.999995
+        }
+      ]
+    },
+    {
+      "district_id_a": "16",
+      "district_id_b": "16",
+      "pop_a": 185112,
+      "displaced_from_a": 2,
+      "displaced_pct": 1.3e-05,
+      "moved_to": [
+        {
+          "district_id_b": "16",
+          "pop_moved": 185110,
+          "pct_of_district_a": 0.999987
+        }
+      ]
+    },
+    {
+      "district_id_a": "17",
+      "district_id_b": "17",
+      "pop_a": 203628,
+      "displaced_from_a": 75682,
+      "displaced_pct": 0.371666,
+      "moved_to": [
+        {
+          "district_id_b": "17",
+          "pop_moved": 127946,
+          "pct_of_district_a": 0.628334
+        },
+        {
+          "district_id_b": "25",
+          "pop_moved": 35127,
+          "pct_of_district_a": 0.172504
+        },
+        {
+          "district_id_b": "10",
+          "pop_moved": 21556,
+          "pct_of_district_a": 0.105859
+        },
+        {
+          "district_id_b": "43",
+          "pop_moved": 18999,
+          "pct_of_district_a": 0.093303
+        }
+      ]
+    },
+    {
+      "district_id_a": "6",
+      "district_id_b": "6",
+      "pop_a": 210532,
+      "displaced_from_a": 108245,
+      "displaced_pct": 0.514148,
+      "moved_to": [
+        {
+          "district_id_b": "6",
+          "pop_moved": 102287,
+          "pct_of_district_a": 0.485852
+        },
+        {
+          "district_id_b": "14",
+          "pop_moved": 40432,
+          "pct_of_district_a": 0.192049
+        },
+        {
+          "district_id_b": "38",
+          "pop_moved": 40070,
+          "pct_of_district_a": 0.190327
+        },
+        {
+          "district_id_b": "33",
+          "pop_moved": 27742,
+          "pct_of_district_a": 0.13177
+        }
+      ]
+    },
+    {
+      "district_id_a": "31",
+      "district_id_b": "31",
+      "pop_a": 200874,
+      "displaced_from_a": 68072,
+      "displaced_pct": 0.338877,
+      "moved_to": [
+        {
+          "district_id_b": "31",
+          "pop_moved": 132802,
+          "pct_of_district_a": 0.661123
+        },
+        {
+          "district_id_b": "30",
+          "pop_moved": 68071,
+          "pct_of_district_a": 0.338875
+        }
+      ]
+    },
+    {
+      "district_id_a": "56",
+      "district_id_b": "14",
+      "pop_a": 189065,
+      "displaced_from_a": 100982,
+      "displaced_pct": 0.534113,
+      "moved_to": [
+        {
+          "district_id_b": "14",
+          "pop_moved": 88083,
+          "pct_of_district_a": 0.465887
+        },
+        {
+          "district_id_b": "56",
+          "pop_moved": 53514,
+          "pct_of_district_a": 0.283043
+        },
+        {
+          "district_id_b": "21",
+          "pop_moved": 40335,
+          "pct_of_district_a": 0.213338
+        },
+        {
+          "district_id_b": "48",
+          "pop_moved": 7128,
+          "pct_of_district_a": 0.037701
+        }
+      ]
+    },
+    {
+      "district_id_a": "20",
+      "district_id_b": "20",
+      "pop_a": 194874,
+      "displaced_from_a": 2814,
+      "displaced_pct": 0.014443,
+      "moved_to": [
+        {
+          "district_id_b": "20",
+          "pop_moved": 192060,
+          "pct_of_district_a": 0.985557
+        },
+        {
+          "district_id_b": "18",
+          "pop_moved": 1777,
+          "pct_of_district_a": 0.009121
+        },
+        {
+          "district_id_b": "26",
+          "pop_moved": 1037,
+          "pct_of_district_a": 0.005322
+        }
+      ]
+    },
+    {
+      "district_id_a": "50",
+      "district_id_b": "50",
+      "pop_a": 186077,
+      "displaced_from_a": 6167,
+      "displaced_pct": 0.033144,
+      "moved_to": [
+        {
+          "district_id_b": "50",
+          "pop_moved": 179910,
+          "pct_of_district_a": 0.96686
+        },
+        {
+          "district_id_b": "47",
+          "pop_moved": 6151,
+          "pct_of_district_a": 0.033054
+        }
+      ]
+    },
+    {
+      "district_id_a": "21",
+      "district_id_b": "21",
+      "pop_a": 213660,
+      "displaced_from_a": 45199,
+      "displaced_pct": 0.211548,
+      "moved_to": [
+        {
+          "district_id_b": "21",
+          "pop_moved": 168461,
+          "pct_of_district_a": 0.788452
+        },
+        {
+          "district_id_b": "56",
+          "pop_moved": 28864,
+          "pct_of_district_a": 0.135092
+        },
+        {
+          "district_id_b": "32",
+          "pop_moved": 12106,
+          "pct_of_district_a": 0.056659
+        },
+        {
+          "district_id_b": "48",
+          "pop_moved": 4228,
+          "pct_of_district_a": 0.019787
+        }
+      ]
+    },
+    {
+      "district_id_a": "43",
+      "district_id_b": "43",
+      "pop_a": 196565,
+      "displaced_from_a": 30549,
+      "displaced_pct": 0.155414,
+      "moved_to": [
+        {
+          "district_id_b": "43",
+          "pop_moved": 166016,
+          "pct_of_district_a": 0.844586
+        },
+        {
+          "district_id_b": "17",
+          "pop_moved": 19710,
+          "pct_of_district_a": 0.100274
+        },
+        {
+          "district_id_b": "10",
+          "pop_moved": 7461,
+          "pct_of_district_a": 0.037955
+        },
+        {
+          "district_id_b": "55",
+          "pop_moved": 3378,
+          "pct_of_district_a": 0.017184
+        }
+      ]
+    },
+    {
+      "district_id_a": "40",
+      "district_id_b": "40",
+      "pop_a": 195569,
+      "displaced_from_a": 36582,
+      "displaced_pct": 0.187055,
+      "moved_to": [
+        {
+          "district_id_b": "40",
+          "pop_moved": 158987,
+          "pct_of_district_a": 0.812945
+        },
+        {
+          "district_id_b": "14",
+          "pop_moved": 22107,
+          "pct_of_district_a": 0.113038
+        },
+        {
+          "district_id_b": "41",
+          "pop_moved": 7487,
+          "pct_of_district_a": 0.038284
+        },
+        {
+          "district_id_b": "7",
+          "pop_moved": 6980,
+          "pct_of_district_a": 0.03569
+        }
+      ]
+    },
+    {
+      "district_id_a": "10",
+      "district_id_b": "10",
+      "pop_a": 189350,
+      "displaced_from_a": 26288,
+      "displaced_pct": 0.138835,
+      "moved_to": [
+        {
+          "district_id_b": "10",
+          "pop_moved": 163062,
+          "pct_of_district_a": 0.861165
+        },
+        {
+          "district_id_b": "17",
+          "pop_moved": 13194,
+          "pct_of_district_a": 0.06968
+        },
+        {
+          "district_id_b": "41",
+          "pop_moved": 9337,
+          "pct_of_district_a": 0.049313
+        },
+        {
+          "district_id_b": "42",
+          "pop_moved": 3755,
+          "pct_of_district_a": 0.019831
+        }
+      ]
+    },
+    {
+      "district_id_a": "8",
+      "district_id_b": "8",
+      "pop_a": 179719,
+      "displaced_from_a": 57235,
+      "displaced_pct": 0.318468,
+      "moved_to": [
+        {
+          "district_id_b": "8",
+          "pop_moved": 122484,
+          "pct_of_district_a": 0.681532
+        },
+        {
+          "district_id_b": "11",
+          "pop_moved": 57234,
+          "pct_of_district_a": 0.318466
+        }
+      ]
+    },
+    {
+      "district_id_a": "19",
+      "district_id_b": "19",
+      "pop_a": 171580,
+      "displaced_from_a": 10489,
+      "displaced_pct": 0.061133,
+      "moved_to": [
+        {
+          "district_id_b": "19",
+          "pop_moved": 161091,
+          "pct_of_district_a": 0.938867
+        },
+        {
+          "district_id_b": "20",
+          "pop_moved": 9218,
+          "pct_of_district_a": 0.053722
+        },
+        {
+          "district_id_b": "1",
+          "pop_moved": 1271,
+          "pct_of_district_a": 0.007409
+        }
+      ]
+    },
+    {
+      "district_id_a": "4",
+      "district_id_b": "4",
+      "pop_a": 193292,
+      "displaced_from_a": 49727,
+      "displaced_pct": 0.257263,
+      "moved_to": [
+        {
+          "district_id_b": "4",
+          "pop_moved": 143565,
+          "pct_of_district_a": 0.742738
+        },
+        {
+          "district_id_b": "23",
+          "pop_moved": 30975,
+          "pct_of_district_a": 0.160252
+        },
+        {
+          "district_id_b": "19",
+          "pop_moved": 18751,
+          "pct_of_district_a": 0.097007
+        }
+      ]
+    },
+    {
+      "district_id_a": "55",
+      "district_id_b": "55",
+      "pop_a": 199509,
+      "displaced_from_a": 28326,
+      "displaced_pct": 0.141978,
+      "moved_to": [
+        {
+          "district_id_b": "55",
+          "pop_moved": 171183,
+          "pct_of_district_a": 0.858022
+        },
+        {
+          "district_id_b": "41",
+          "pop_moved": 20095,
+          "pct_of_district_a": 0.10072
+        },
+        {
+          "district_id_b": "9",
+          "pop_moved": 6282,
+          "pct_of_district_a": 0.031486
+        },
+        {
+          "district_id_b": "42",
+          "pop_moved": 1912,
+          "pct_of_district_a": 0.009585
+        }
+      ]
+    },
+    {
+      "district_id_a": "22",
+      "district_id_b": "22",
+      "pop_a": 177079,
+      "displaced_from_a": 12000,
+      "displaced_pct": 0.067769,
+      "moved_to": [
+        {
+          "district_id_b": "22",
+          "pop_moved": 165079,
+          "pct_of_district_a": 0.932231
+        },
+        {
+          "district_id_b": "23",
+          "pop_moved": 12000,
+          "pct_of_district_a": 0.067769
+        }
+      ]
+    },
+    {
+      "district_id_a": "5",
+      "district_id_b": "5",
+      "pop_a": 196143,
+      "displaced_from_a": 14246,
+      "displaced_pct": 0.072631,
+      "moved_to": [
+        {
+          "district_id_b": "5",
+          "pop_moved": 181897,
+          "pct_of_district_a": 0.927369
+        },
+        {
+          "district_id_b": "9",
+          "pop_moved": 8942,
+          "pct_of_district_a": 0.045587
+        },
+        {
+          "district_id_b": "7",
+          "pop_moved": 5263,
+          "pct_of_district_a": 0.026834
+        }
+      ]
+    },
+    {
+      "district_id_a": "30",
+      "district_id_b": "30",
+      "pop_a": 185628,
+      "displaced_from_a": 32569,
+      "displaced_pct": 0.175455,
+      "moved_to": [
+        {
+          "district_id_b": "30",
+          "pop_moved": 153059,
+          "pct_of_district_a": 0.824545
+        },
+        {
+          "district_id_b": "28",
+          "pop_moved": 24373,
+          "pct_of_district_a": 0.131298
+        },
+        {
+          "district_id_b": "31",
+          "pop_moved": 8196,
+          "pct_of_district_a": 0.044152
+        }
+      ]
+    },
+    {
+      "district_id_a": "52",
+      "district_id_b": "52",
+      "pop_a": 179411,
+      "displaced_from_a": 52138,
+      "displaced_pct": 0.290604,
+      "moved_to": [
+        {
+          "district_id_b": "52",
+          "pop_moved": 127274,
+          "pct_of_district_a": 0.709397
+        },
+        {
+          "district_id_b": "53",
+          "pop_moved": 37184,
+          "pct_of_district_a": 0.207259
+        },
+        {
+          "district_id_b": "54",
+          "pop_moved": 10414,
+          "pct_of_district_a": 0.058047
+        },
+        {
+          "district_id_b": "37",
+          "pop_moved": 4539,
+          "pct_of_district_a": 0.025297
+        }
+      ]
+    },
+    {
+      "district_id_a": "27",
+      "district_id_b": "27",
+      "pop_a": 247844,
+      "displaced_from_a": 31138,
+      "displaced_pct": 0.125634,
+      "moved_to": [
+        {
+          "district_id_b": "27",
+          "pop_moved": 216706,
+          "pct_of_district_a": 0.874366
+        },
+        {
+          "district_id_b": "48",
+          "pop_moved": 31136,
+          "pct_of_district_a": 0.125628
+        }
+      ]
+    },
+    {
+      "district_id_a": "34",
+      "district_id_b": "34",
+      "pop_a": 193843,
+      "displaced_from_a": 20981,
+      "displaced_pct": 0.108238,
+      "moved_to": [
+        {
+          "district_id_b": "34",
+          "pop_moved": 172862,
+          "pct_of_district_a": 0.891762
+        },
+        {
+          "district_id_b": "16",
+          "pop_moved": 20952,
+          "pct_of_district_a": 0.108086
+        }
+      ]
+    },
+    {
+      "district_id_a": "53",
+      "district_id_b": "53",
+      "pop_a": 174643,
+      "displaced_from_a": 0,
+      "displaced_pct": 1e-06,
+      "moved_to": [
+        {
+          "district_id_b": "53",
+          "pop_moved": 174643,
+          "pct_of_district_a": 0.999999
+        }
+      ]
+    },
+    {
+      "district_id_a": "42",
+      "district_id_b": "42",
+      "pop_a": 188406,
+      "displaced_from_a": 20663,
+      "displaced_pct": 0.10967,
+      "moved_to": [
+        {
+          "district_id_b": "42",
+          "pop_moved": 167743,
+          "pct_of_district_a": 0.89033
+        },
+        {
+          "district_id_b": "40",
+          "pop_moved": 13768,
+          "pct_of_district_a": 0.073077
+        },
+        {
+          "district_id_b": "44",
+          "pop_moved": 4069,
+          "pct_of_district_a": 0.021595
+        },
+        {
+          "district_id_b": "41",
+          "pop_moved": 2821,
+          "pct_of_district_a": 0.014975
+        }
+      ]
+    },
+    {
+      "district_id_a": "14",
+      "district_id_b": "52",
+      "pop_a": 201621,
+      "displaced_from_a": 102672,
+      "displaced_pct": 0.509235,
+      "moved_to": [
+        {
+          "district_id_b": "52",
+          "pop_moved": 98949,
+          "pct_of_district_a": 0.490765
+        },
+        {
+          "district_id_b": "21",
+          "pop_moved": 61653,
+          "pct_of_district_a": 0.305785
+        },
+        {
+          "district_id_b": "32",
+          "pop_moved": 32641,
+          "pct_of_district_a": 0.161892
+        },
+        {
+          "district_id_b": "37",
+          "pop_moved": 8379,
+          "pct_of_district_a": 0.041556
+        }
+      ]
+    },
+    {
+      "district_id_a": "28",
+      "district_id_b": "28",
+      "pop_a": 193759,
+      "displaced_from_a": 56497,
+      "displaced_pct": 0.291583,
+      "moved_to": [
+        {
+          "district_id_b": "28",
+          "pop_moved": 137262,
+          "pct_of_district_a": 0.708417
+        },
+        {
+          "district_id_b": "29",
+          "pop_moved": 38064,
+          "pct_of_district_a": 0.19645
+        },
+        {
+          "district_id_b": "30",
+          "pop_moved": 17811,
+          "pct_of_district_a": 0.091924
+        },
+        {
+          "district_id_b": "35",
+          "pop_moved": 621,
+          "pct_of_district_a": 0.003206
+        }
+      ]
+    },
+    {
+      "district_id_a": "38",
+      "district_id_b": "38",
+      "pop_a": 194347,
+      "displaced_from_a": 58272,
+      "displaced_pct": 0.299833,
+      "moved_to": [
+        {
+          "district_id_b": "38",
+          "pop_moved": 136075,
+          "pct_of_district_a": 0.700167
+        },
+        {
+          "district_id_b": "6",
+          "pop_moved": 21192,
+          "pct_of_district_a": 0.109044
+        },
+        {
+          "district_id_b": "33",
+          "pop_moved": 19993,
+          "pct_of_district_a": 0.102874
+        },
+        {
+          "district_id_b": "35",
+          "pop_moved": 13801,
+          "pct_of_district_a": 0.07101
+        },
+        {
+          "district_id_b": "39",
+          "pop_moved": 3285,
+          "pct_of_district_a": 0.016904
+        }
+      ]
+    },
+    {
+      "district_id_a": "2",
+      "district_id_b": "2",
+      "pop_a": 189492,
+      "displaced_from_a": 5472,
+      "displaced_pct": 0.028875,
+      "moved_to": [
+        {
+          "district_id_b": "2",
+          "pop_moved": 184022,
+          "pct_of_district_a": 0.971134
+        },
+        {
+          "district_id_b": "1",
+          "pop_moved": 5288,
+          "pct_of_district_a": 0.027904
+        }
+      ]
+    },
+    {
+      "district_id_a": "49",
+      "district_id_b": "49",
+      "pop_a": 196756,
+      "displaced_from_a": 11573,
+      "displaced_pct": 0.058819,
+      "moved_to": [
+        {
+          "district_id_b": "49",
+          "pop_moved": 185183,
+          "pct_of_district_a": 0.941181
+        },
+        {
+          "district_id_b": "50",
+          "pop_moved": 11571,
+          "pct_of_district_a": 0.058809
+        }
+      ]
+    },
+    {
+      "district_id_a": "26",
+      "district_id_b": "26",
+      "pop_a": 162113,
+      "displaced_from_a": 8260,
+      "displaced_pct": 0.050952,
+      "moved_to": [
+        {
+          "district_id_b": "26",
+          "pop_moved": 153853,
+          "pct_of_district_a": 0.949048
+        },
+        {
+          "district_id_b": "25",
+          "pop_moved": 8259,
+          "pct_of_district_a": 0.050944
+        }
+      ]
+    },
+    {
+      "district_id_a": "7",
+      "district_id_b": "8",
+      "pop_a": 171471,
+      "displaced_from_a": 115136,
+      "displaced_pct": 0.671462,
+      "moved_to": [
+        {
+          "district_id_b": "8",
+          "pop_moved": 56335,
+          "pct_of_district_a": 0.328538
+        },
+        {
+          "district_id_b": "13",
+          "pop_moved": 56138,
+          "pct_of_district_a": 0.327392
+        },
+        {
+          "district_id_b": "3",
+          "pop_moved": 31368,
+          "pct_of_district_a": 0.182934
+        },
+        {
+          "district_id_b": "19",
+          "pop_moved": 22184,
+          "pct_of_district_a": 0.129377
+        },
+        {
+          "district_id_b": "20",
+          "pop_moved": 5446,
+          "pct_of_district_a": 0.031758
+        }
+      ]
+    },
+    {
+      "district_id_a": "48",
+      "district_id_b": "7",
+      "pop_a": 197406,
+      "displaced_from_a": 60746,
+      "displaced_pct": 0.307722,
+      "moved_to": [
+        {
+          "district_id_b": "7",
+          "pop_moved": 136660,
+          "pct_of_district_a": 0.692278
+        },
+        {
+          "district_id_b": "48",
+          "pop_moved": 60693,
+          "pct_of_district_a": 0.307453
+        }
+      ]
+    },
+    {
+      "district_id_a": "37",
+      "district_id_b": "37",
+      "pop_a": 192450,
+      "displaced_from_a": 10282,
+      "displaced_pct": 0.053426,
+      "moved_to": [
+        {
+          "district_id_b": "37",
+          "pop_moved": 182168,
+          "pct_of_district_a": 0.946574
+        },
+        {
+          "district_id_b": "32",
+          "pop_moved": 10222,
+          "pct_of_district_a": 0.053113
+        }
+      ]
+    },
+    {
+      "district_id_a": "9",
+      "district_id_b": "9",
+      "pop_a": 208385,
+      "displaced_from_a": 108265,
+      "displaced_pct": 0.519541,
+      "moved_to": [
+        {
+          "district_id_b": "9",
+          "pop_moved": 100120,
+          "pct_of_district_a": 0.480459
+        },
+        {
+          "district_id_b": "46",
+          "pop_moved": 59264,
+          "pct_of_district_a": 0.284395
+        },
+        {
+          "district_id_b": "45",
+          "pop_moved": 26533,
+          "pct_of_district_a": 0.127328
+        },
+        {
+          "district_id_b": "55",
+          "pop_moved": 15401,
+          "pct_of_district_a": 0.073909
+        },
+        {
+          "district_id_b": "41",
+          "pop_moved": 3512,
+          "pct_of_district_a": 0.016855
+        },
+        {
+          "district_id_b": "5",
+          "pop_moved": 1884,
+          "pct_of_district_a": 0.009041
+        },
+        {
+          "district_id_b": "7",
+          "pop_moved": 1670,
+          "pct_of_district_a": 0.008012
+        }
+      ]
+    },
+    {
+      "district_id_a": "33",
+      "district_id_b": "33",
+      "pop_a": 194620,
+      "displaced_from_a": 40112,
+      "displaced_pct": 0.206102,
+      "moved_to": [
+        {
+          "district_id_b": "33",
+          "pop_moved": 154508,
+          "pct_of_district_a": 0.793898
+        },
+        {
+          "district_id_b": "32",
+          "pop_moved": 27834,
+          "pct_of_district_a": 0.143015
+        },
+        {
+          "district_id_b": "6",
+          "pop_moved": 9941,
+          "pct_of_district_a": 0.051081
+        },
+        {
+          "district_id_b": "37",
+          "pop_moved": 2141,
+          "pct_of_district_a": 0.011002
+        },
+        {
+          "district_id_b": "38",
+          "pop_moved": 195,
+          "pct_of_district_a": 0.001004
+        }
+      ]
+    },
+    {
+      "district_id_a": "36",
+      "district_id_b": "36",
+      "pop_a": 194797,
+      "displaced_from_a": 20072,
+      "displaced_pct": 0.103041,
+      "moved_to": [
+        {
+          "district_id_b": "36",
+          "pop_moved": 174725,
+          "pct_of_district_a": 0.896959
+        },
+        {
+          "district_id_b": "39",
+          "pop_moved": 20067,
+          "pct_of_district_a": 0.103016
+        }
+      ]
+    },
+    {
+      "district_id_a": "29",
+      "district_id_b": "29",
+      "pop_a": 190152,
+      "displaced_from_a": 1499,
+      "displaced_pct": 0.007883,
+      "moved_to": [
+        {
+          "district_id_b": "29",
+          "pop_moved": 188653,
+          "pct_of_district_a": 0.992117
+        },
+        {
+          "district_id_b": "15",
+          "pop_moved": 1499,
+          "pct_of_district_a": 0.007883
+        }
+      ]
+    },
+    {
+      "district_id_a": "15",
+      "district_id_b": "15",
+      "pop_a": 167658,
+      "displaced_from_a": 1,
+      "displaced_pct": 4e-06,
+      "moved_to": [
+        {
+          "district_id_b": "15",
+          "pop_moved": 167658,
+          "pct_of_district_a": 0.999997
+        }
+      ]
+    },
+    {
+      "district_id_a": "44",
+      "district_id_b": "44",
+      "pop_a": 198371,
+      "displaced_from_a": 8690,
+      "displaced_pct": 0.043807,
+      "moved_to": [
+        {
+          "district_id_b": "44",
+          "pop_moved": 189681,
+          "pct_of_district_a": 0.956193
+        },
+        {
+          "district_id_b": "42",
+          "pop_moved": 5760,
+          "pct_of_district_a": 0.029037
+        },
+        {
+          "district_id_b": "34",
+          "pop_moved": 2926,
+          "pct_of_district_a": 0.014748
+        }
+      ]
+    },
+    {
+      "district_id_a": "24",
+      "district_id_b": "24",
+      "pop_a": 201121,
+      "displaced_from_a": 22297,
+      "displaced_pct": 0.110865,
+      "moved_to": [
+        {
+          "district_id_b": "24",
+          "pop_moved": 178824,
+          "pct_of_district_a": 0.889136
+        },
+        {
+          "district_id_b": "23",
+          "pop_moved": 22129,
+          "pct_of_district_a": 0.110028
+        }
+      ]
+    },
+    {
+      "district_id_a": "46",
+      "district_id_b": "46",
+      "pop_a": 203757,
+      "displaced_from_a": 29815,
+      "displaced_pct": 0.146328,
+      "moved_to": [
+        {
+          "district_id_b": "46",
+          "pop_moved": 173942,
+          "pct_of_district_a": 0.853672
+        },
+        {
+          "district_id_b": "17",
+          "pop_moved": 21643,
+          "pct_of_district_a": 0.106219
+        },
+        {
+          "district_id_b": "47",
+          "pop_moved": 8172,
+          "pct_of_district_a": 0.040104
+        }
+      ]
+    },
+    {
+      "district_id_a": "47",
+      "district_id_b": "47",
+      "pop_a": 202081,
+      "displaced_from_a": 32012,
+      "displaced_pct": 0.158411,
+      "moved_to": [
+        {
+          "district_id_b": "47",
+          "pop_moved": 170069,
+          "pct_of_district_a": 0.841589
+        },
+        {
+          "district_id_b": "45",
+          "pop_moved": 18867,
+          "pct_of_district_a": 0.093361
+        },
+        {
+          "district_id_b": "46",
+          "pop_moved": 13143,
+          "pct_of_district_a": 0.06504
+        }
+      ]
+    },
+    {
+      "district_id_a": "25",
+      "district_id_b": "25",
+      "pop_a": 184090,
+      "displaced_from_a": 67516,
+      "displaced_pct": 0.366756,
+      "moved_to": [
+        {
+          "district_id_b": "25",
+          "pop_moved": 116574,
+          "pct_of_district_a": 0.633244
+        },
+        {
+          "district_id_b": "17",
+          "pop_moved": 34864,
+          "pct_of_district_a": 0.189385
+        },
+        {
+          "district_id_b": "24",
+          "pop_moved": 31971,
+          "pct_of_district_a": 0.17367
+        },
+        {
+          "district_id_b": "18",
+          "pop_moved": 681,
+          "pct_of_district_a": 0.0037
+        }
+      ]
+    },
+    {
+      "district_id_a": "12",
+      "district_id_b": "12",
+      "pop_a": 156514,
+      "displaced_from_a": 0,
+      "displaced_pct": 2e-06,
+      "moved_to": [
+        {
+          "district_id_b": "12",
+          "pop_moved": 156514,
+          "pct_of_district_a": 0.999999
+        }
+      ]
+    },
+    {
+      "district_id_a": "1",
+      "district_id_b": "1",
+      "pop_a": 198887,
+      "displaced_from_a": 4710,
+      "displaced_pct": 0.023681,
+      "moved_to": [
+        {
+          "district_id_b": "1",
+          "pop_moved": 194177,
+          "pct_of_district_a": 0.976319
+        },
+        {
+          "district_id_b": "4",
+          "pop_moved": 4299,
+          "pct_of_district_a": 0.021614
+        },
+        {
+          "district_id_b": "2",
+          "pop_moved": 411,
+          "pct_of_district_a": 0.002065
+        }
+      ]
+    },
+    {
+      "district_id_a": "35",
+      "district_id_b": "35",
+      "pop_a": 207451,
+      "displaced_from_a": 30018,
+      "displaced_pct": 0.144701,
+      "moved_to": [
+        {
+          "district_id_b": "35",
+          "pop_moved": 177433,
+          "pct_of_district_a": 0.855299
+        },
+        {
+          "district_id_b": "30",
+          "pop_moved": 16362,
+          "pct_of_district_a": 0.078872
+        },
+        {
+          "district_id_b": "28",
+          "pop_moved": 10731,
+          "pct_of_district_a": 0.051726
+        },
+        {
+          "district_id_b": "38",
+          "pop_moved": 2272,
+          "pct_of_district_a": 0.010954
+        },
+        {
+          "district_id_b": "39",
+          "pop_moved": 651,
+          "pct_of_district_a": 0.003138
+        }
+      ]
+    },
+    {
+      "district_id_a": "45",
+      "district_id_b": "45",
+      "pop_a": 214703,
+      "displaced_from_a": 76191,
+      "displaced_pct": 0.354865,
+      "moved_to": [
+        {
+          "district_id_b": "45",
+          "pop_moved": 138512,
+          "pct_of_district_a": 0.645135
+        },
+        {
+          "district_id_b": "48",
+          "pop_moved": 48821,
+          "pct_of_district_a": 0.227388
+        },
+        {
+          "district_id_b": "7",
+          "pop_moved": 27368,
+          "pct_of_district_a": 0.127469
+        }
+      ]
+    },
+    {
+      "district_id_a": "23",
+      "district_id_b": "23",
+      "pop_a": 172283,
+      "displaced_from_a": 15002,
+      "displaced_pct": 0.08708,
+      "moved_to": [
+        {
+          "district_id_b": "23",
+          "pop_moved": 157281,
+          "pct_of_district_a": 0.912922
+        },
+        {
+          "district_id_b": "26",
+          "pop_moved": 13642,
+          "pct_of_district_a": 0.079184
+        },
+        {
+          "district_id_b": "22",
+          "pop_moved": 1096,
+          "pct_of_district_a": 0.006364
+        },
+        {
+          "district_id_b": "24",
+          "pop_moved": 263,
+          "pct_of_district_a": 0.001529
+        }
+      ]
+    },
+    {
+      "district_id_a": "13",
+      "district_id_b": "13",
+      "pop_a": 166659,
+      "displaced_from_a": 73769,
+      "displaced_pct": 0.442637,
+      "moved_to": [
+        {
+          "district_id_b": "13",
+          "pop_moved": 92890,
+          "pct_of_district_a": 0.557363
+        },
+        {
+          "district_id_b": "20",
+          "pop_moved": 59909,
+          "pct_of_district_a": 0.359471
+        },
+        {
+          "district_id_b": "12",
+          "pop_moved": 13860,
+          "pct_of_district_a": 0.083164
+        }
+      ]
+    },
+    {
+      "district_id_a": "54",
+      "district_id_b": "54",
+      "pop_a": 176410,
+      "displaced_from_a": 23016,
+      "displaced_pct": 0.130467,
+      "moved_to": [
+        {
+          "district_id_b": "54",
+          "pop_moved": 153394,
+          "pct_of_district_a": 0.869533
+        },
+        {
+          "district_id_b": "51",
+          "pop_moved": 23016,
+          "pct_of_district_a": 0.130467
+        }
+      ]
+    },
+    {
+      "district_id_a": "51",
+      "district_id_b": "51",
+      "pop_a": 193626,
+      "displaced_from_a": 13684,
+      "displaced_pct": 0.070673,
+      "moved_to": [
+        {
+          "district_id_b": "51",
+          "pop_moved": 179942,
+          "pct_of_district_a": 0.929328
+        },
+        {
+          "district_id_b": "50",
+          "pop_moved": 13144,
+          "pct_of_district_a": 0.067886
+        },
+        {
+          "district_id_b": "27",
+          "pop_moved": 539,
+          "pct_of_district_a": 0.002785
+        }
+      ]
+    }
+  ]
+}
